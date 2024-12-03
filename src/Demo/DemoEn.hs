@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 module Demo.DemoEn (fillDemoEn) where
 
@@ -8,7 +9,10 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Trans.Reader (ReaderT)
 
 import qualified Data.ByteString as BS
-import Data.Time.Clock (getCurrentTime)
+import Data.Time.Calendar
+    ( addGregorianMonthsClip, pattern YearMonthDay
+    )
+import Data.Time.Clock (getCurrentTime, UTCTime (utctDay))
 
 import Database.Persist (PersistStoreWrite (insert, insert_))
 import Database.Persist.SqlBackend (SqlBackend)
@@ -21,6 +25,8 @@ import Model
       ( UserPhoto, userPhotoUser, userPhotoMime, userPhotoAttribution
       , userPhotoPhoto
       )
+    , Project (Project, projectName, projectStart, projectEnd, projectDescr)
+    , Period (Period, periodName, periodStart, periodEnd)
     )
     
 import Settings (AppSettings)
@@ -33,8 +39,9 @@ import Yesod.Auth.Email (saltPass)
 fillDemoEn :: MonadIO m => AppSettings -> ReaderT SqlBackend m ()
 fillDemoEn _appSettings = do
 
-    _now <- liftIO getCurrentTime
+    now <- liftIO getCurrentTime
 
+    let today = utctDay now
     
     let minute = 60 :: Int
     let hour = 60 * minute
@@ -110,68 +117,25 @@ fillDemoEn _appSettings = do
                         , userPhotoAttribution = Just freepik
                         }
 
-    pass5 <- liftIO $ saltPass "jaturnbow"
-    let user5 = User { userEmail = "jaturnbow@xmail.edu"
-                     , userPassword = Just pass5
-                     , userName = Just "Jill A. Turnbow"
-                     , userSuper = False
-                     , userAdmin = False
-                     }
-    uid5 <- insert user5
+    let project1 = Project { projectName = "Project 1"
+                           , projectStart = YearMonthDay 2024 10 1
+                           , projectEnd = YearMonthDay 2035 3 1
+                           , projectDescr = Just "The First project"
+                           }
+    pid1 <- insert project1
 
-    liftIO (BS.readFile "demo/user_5.avif") >>= \bs ->
-      insert_ UserPhoto { userPhotoUser = uid5
-                        , userPhotoMime = "image/avif"
-                        , userPhotoPhoto = bs
-                        , userPhotoAttribution = Just freepik
-                        }
+    let project2 = Project { projectName = "Project 2"
+                           , projectStart = addGregorianMonthsClip (-10) today
+                           , projectEnd = addGregorianMonthsClip 9 today
+                           , projectDescr = Just "The Second project"
+                           }
+    pid2 <- insert project2
 
-    pass6 <- liftIO $ saltPass "cswatkins"
-    let user6 = User { userEmail = "cswatkins@xmail.edu"
-                     , userPassword = Just pass6
-                     , userName = Just "Charles S. Watkins"
-                     , userSuper = False
-                     , userAdmin = False
-                     }
-    uid6 <- insert user6
 
-    liftIO (BS.readFile "demo/user_6.avif") >>= \bs ->
-      insert_ UserPhoto { userPhotoUser = uid6
-                        , userPhotoMime = "image/avif"
-                        , userPhotoPhoto = bs
-                        , userPhotoAttribution = Just freepik
-                        }
-
-    pass7 <- liftIO $ saltPass "dlmeyer"
-    let user7 = User { userEmail = "dlmeyer@xmail.edu"
-                     , userPassword = Just pass7
-                     , userName = Just "Donald L. Meyer"
-                     , userSuper = False
-                     , userAdmin = False
-                     }
-    uid7 <- insert user7
-
-    liftIO (BS.readFile "demo/user_7.avif") >>= \bs ->
-      insert_ UserPhoto { userPhotoUser = uid7
-                        , userPhotoMime = "image/avif"
-                        , userPhotoPhoto = bs
-                        , userPhotoAttribution = Just freepik
-                        }
-
-    pass8 <- liftIO $ saltPass "jjbullock"
-    let user8 = User { userEmail = "jjbullock@xmail.edu"
-                     , userPassword = Just pass8
-                     , userName = Just "Jean J. Bullock"
-                     , userSuper = False
-                     , userAdmin = False
-                     }
-    uid8 <- insert user8
-
-    liftIO (BS.readFile "demo/user_8.avif") >>= \bs ->
-      insert_ UserPhoto { userPhotoUser = uid8
-                        , userPhotoMime = "image/avif"
-                        , userPhotoPhoto = bs
-                        , userPhotoAttribution = Just freepik
-                        }
+    let period1 = Period { periodName = "October 2024"
+                         , periodStart = YearMonthDay 2024 10 1
+                         , periodEnd = YearMonthDay 2024 10 31
+                         }
+    iid1 <- insert period1
     
     return ()

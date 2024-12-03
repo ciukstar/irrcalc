@@ -221,11 +221,24 @@ instance Yesod App where
     isAuthorized SitemapR _ = return Authorized
     isAuthorized WebAppManifestR _ = return Authorized
     
-    isAuthorized (StaticR _) _ = return Authorized   
+    isAuthorized (StaticR _) _ = return Authorized
+
+    
+    isAuthorized (DataR (PeriodDeleR _)) _ = isAdmin
+    isAuthorized (DataR (PeriodEditR _)) _ = isAdmin
+    isAuthorized (DataR PeriodNewR) _ = isAdmin
+    isAuthorized (DataR (PeriodR _)) _ = isAdmin
+    isAuthorized (DataR PeriodsR) _ = setUltDestCurrent >> isAdmin
+
+    
+    isAuthorized (DataR (ProjectDeleR _)) _ = isAdmin
+    isAuthorized (DataR (ProjectEditR _)) _ = isAdmin
+    isAuthorized (DataR ProjectNewR) _ = isAdmin
+    isAuthorized (DataR (ProjectR _)) _ = isAdmin
+    isAuthorized (DataR ProjectsR) _ = setUltDestCurrent >> isAdmin
 
     isAuthorized (DataR (AccountProfileR uid)) _ = isAuthenticatedSelf uid
     isAuthorized (DataR (AccountSettingsR uid)) _ = isAuthenticatedSelf uid
-
     
     isAuthorized (DataR (UserResetPasswordR _)) _ = isAdmin
     isAuthorized (DataR (UserDeleR _)) _ = isAdmin

@@ -2,6 +2,25 @@
 -- Syntax for this file here: https://github.com/yesodweb/persistent/blob/master/docs/Persistent-entity-syntax.md
 
 
+CashFlow
+    name Text
+    type CashFlowType
+    amount Centi
+    descr Textarea Maybe
+
+Period
+    name Text
+    start Day
+    end Day
+    UniquePeriod name
+
+Project
+    name Text
+    start Day
+    end Day
+    descr Textarea Maybe
+    UniqueProject name
+
 UserPhoto
     user UserId OnDeleteCascade
     mime Text

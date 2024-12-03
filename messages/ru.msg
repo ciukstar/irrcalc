@@ -1,4 +1,9 @@
-
+Period: Период
+Periods: Периоды
+PleaseAddIfYouWish: Пожалуйста, добавьте, если хотите
+NoDataYet: Данных пока нет
+Project: Проект
+Projects: Проекты
 PasswordChanged: Пароль изменен
 PasswordDoesNotMatch: Пароль не совпадает
 RepeatPassword: Повторите пароль

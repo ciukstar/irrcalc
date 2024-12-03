@@ -1,0 +1,44 @@
+
+^{widgetTopbar (Just (DataR ProjectsR,[])) (msgr MsgProject) idOverlay (Just idDialogDelete) (Just $ DataR $ ProjectEditR pid)}
+
+<main.responsive.no-padding>
+    
+  $maybe Entity _ (Project name start end descr) <- project
+    <dl.margin>
+
+      <dt.bold>_{MsgName}
+      <dd.small-margin>
+        #{name}
+
+      <dt.bold>_{MsgStartDate}
+      <dd.small-margin>
+        $with dt <- show start
+          <time.day datetime=#{dt}>
+            #{dt}
+
+      <dt.bold>_{MsgEndDate}
+      <dd.small-margin>
+        $with dt <- show end
+          <time.day datetime=#{dt}>
+            #{dt}
+
+      <dt.bold>_{MsgDescription}
+      <dd.small-margin>
+        $maybe descr <- descr
+          #{descr}
+
+^{widgetSnackbar msgs}
+
+<div.overlay ##{idOverlay} data-ui=##{idOverlay}>
+
+<dialog ##{idDialogDelete}>
+  <h5>_{MsgConfirmPlease}
+  <div>_{MsgDeleteAreYouSure}
+  <nav.right-align.no-space>
+    <button.transparent.link data-ui=##{idOverlay}
+      onclick="document.getElementById('#{idDialogDelete}').close()">
+      _{MsgCancel}
+    <form method=post action=@{DataR $ ProjectDeleR pid} enctype=#{et0}>
+      ^{fw0}
+      <button.primary type=submit>
+        _{MsgDele}

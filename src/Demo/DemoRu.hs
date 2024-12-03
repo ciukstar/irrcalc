@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 module Demo.DemoRu (fillDemoRu) where
 
@@ -8,7 +9,8 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Trans.Reader (ReaderT)
 
 import qualified Data.ByteString as BS
-import Data.Time.Clock (getCurrentTime)
+import Data.Time.Calendar (addGregorianMonthsClip, pattern YearMonthDay)
+import Data.Time.Clock (getCurrentTime, UTCTime (utctDay))
 
 import Database.Persist (PersistStoreWrite (insert, insert_))
 import Database.Persist.SqlBackend (SqlBackend)
@@ -21,6 +23,7 @@ import Model
       ( UserPhoto, userPhotoUser, userPhotoMime, userPhotoAttribution
       , userPhotoPhoto
       )
+    , Project (Project, projectName, projectStart, projectEnd, projectDescr)
     )
     
 import Settings (AppSettings)
@@ -33,7 +36,9 @@ import Yesod.Auth.Email (saltPass)
 fillDemoRu :: MonadIO m => AppSettings -> ReaderT SqlBackend m ()
 fillDemoRu _appSettings = do
 
-    _now <- liftIO getCurrentTime
+    now <- liftIO getCurrentTime
+
+    let today = utctDay now
 
     let minute = 60 :: Int
     let hour = 60 * minute
@@ -110,68 +115,18 @@ fillDemoRu _appSettings = do
                         , userPhotoAttribution = Just freepik
                         }
 
-    pass5 <- liftIO $ saltPass "oalekseeva"
-    let user5 = User { userEmail = "oalekseeva@mail.ru"
-                     , userPassword = Just pass5
-                     , userName = Just "Ольга Алексеева"
-                     , userSuper = False
-                     , userAdmin = False
-                     }
-    uid5 <- insert user5
+    let project1 = Project { projectName = "Проект 1"
+                           , projectStart = YearMonthDay 2024 10 1
+                           , projectEnd = YearMonthDay 2035 3 1
+                           , projectDescr = Just "Первый проект"
+                           }
+    pid1 <- insert project1
 
-    liftIO (BS.readFile "demo/user_5.avif") >>= \bs ->
-      insert_ UserPhoto { userPhotoUser = uid5
-                        , userPhotoMime = "image/avif"
-                        , userPhotoPhoto = bs
-                        , userPhotoAttribution = Just freepik
-                        }
-
-    pass6 <- liftIO $ saltPass "lglazkov"
-    let user6 = User { userEmail = "lglazkov@mail.ru"
-                     , userPassword = Just pass6
-                     , userName = Just "Леонтий Глазков"
-                     , userSuper = False
-                     , userAdmin = False
-                     }
-    uid6 <- insert user6
-
-    liftIO (BS.readFile "demo/user_6.avif") >>= \bs ->
-      insert_ UserPhoto { userPhotoUser = uid6
-                        , userPhotoMime = "image/avif"
-                        , userPhotoPhoto = bs
-                        , userPhotoAttribution = Just freepik
-                        }
-
-    pass7 <- liftIO $ saltPass "obezrukov"
-    let user7 = User { userEmail = "obezrukov@mail.ru"
-                     , userPassword = Just pass7
-                     , userName = Just "Остап Безруков"
-                     , userSuper = False
-                     , userAdmin = False
-                     }
-    uid7 <- insert user7
-
-    liftIO (BS.readFile "demo/user_7.avif") >>= \bs ->
-      insert_ UserPhoto { userPhotoUser = uid7
-                        , userPhotoMime = "image/avif"
-                        , userPhotoPhoto = bs
-                        , userPhotoAttribution = Just freepik
-                        }
-
-    pass8 <- liftIO $ saltPass "vyashina"
-    let user8 = User { userEmail = "vyashina@mail.ru"
-                     , userPassword = Just pass8
-                     , userName = Just "Вера Яшина"
-                     , userSuper = False
-                     , userAdmin = False
-                     }
-    uid8 <- insert user8
-
-    liftIO (BS.readFile "demo/user_8.avif") >>= \bs ->
-      insert_ UserPhoto { userPhotoUser = uid8
-                        , userPhotoMime = "image/avif"
-                        , userPhotoPhoto = bs
-                        , userPhotoAttribution = Just freepik
-                        }
+    let project2 = Project { projectName = "Проект 2"
+                           , projectStart = addGregorianMonthsClip (-10) today
+                           , projectEnd = addGregorianMonthsClip 9 today
+                           , projectDescr = Just "Второй проект"
+                           }
+    pid2 <- insert project2
 
     return ()

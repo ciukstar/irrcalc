@@ -15,11 +15,19 @@
 
 
     <a href=@{HomeR} :curr == Just HomeR:.active>
-      <i>home
+      <i.no-round>home
       <span>_{MsgHome}
 
+    <a href=@{DataR ProjectsR} :curr == Just (DataR ProjectsR):.active>
+      <i.no-round>overview
+      <span>_{MsgProjects}
+
+    <a href=@{DataR PeriodsR} :curr == Just (DataR PeriodsR):.active>
+      <i.no-round>date_range
+      <span>_{MsgPeriods}
+      
     <a href=@{DataR UsersR} :curr == Just (DataR UsersR):.active>
-      <i>group
+      <i.no-round>group
       <span>_{MsgUsers}
       
     <hr>

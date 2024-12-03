@@ -1,0 +1,39 @@
+
+^{widgetTopbar Nothing (msgr MsgProjects) idOverlay Nothing Nothing}
+
+<main.responsive.no-padding>
+  $if null projects
+    <figure.margin.pading.center-align>
+      <i.extra>folder_open
+      <figcaption>
+        <div>_{MsgNoDataYet}.
+        <div>_{MsgPleaseAddIfYouWish}.
+ 
+  $else
+    $forall Entity pid (Project name start end _) <- projects
+      <a.row.padding.wave href=@{DataR $ ProjectR pid}>
+
+        <div.content.max>
+          <h6.headline.large-text>
+            #{name}
+
+          <div.supporting-text.small-text>
+            $with dt <- show start
+              <time.day datetime=#{dt}>
+                #{dt}
+                
+            &nbsp;&mdash;&nbsp;
+            
+            $with dt <- show end
+              <time.day datetime=#{dt}>
+                #{dt}
+
+        <i>arrow_forward_ios
+
+      <hr>
+
+  <a.button.circle.extra.fixed.right.bottom.margin.medium-elevate href=@{DataR ProjectNewR}
+    style="z-index:1" onclick="event.stopPropagation()">
+    <i>add
+
+  ^{widgetSnackbar msgs}

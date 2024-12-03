@@ -19,6 +19,18 @@
 
 /data DataR:
 
+    /periods/#PeriodId/dele PeriodDeleR POST
+    /periods/#PeriodId/edit PeriodEditR GET
+    /periods/new/form       PeriodNewR  GET
+    /periods/#PeriodId      PeriodR     GET POST
+    /periods                PeriodsR    GET POST
+    
+    /projects/#ProjectId/dele ProjectDeleR POST
+    /projects/#ProjectId/edit ProjectEditR GET
+    /projects/new/form        ProjectNewR  GET
+    /projects/#ProjectId      ProjectR     GET POST
+    /projects                 ProjectsR    GET POST
+
     /accounts/#UserId/settings AccountSettingsR GET
     /accounts/#UserId/profile  AccountProfileR  GET
     

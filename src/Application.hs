@@ -60,6 +60,18 @@ import Handler.Accounts
     ( getAccountProfileR, getAccountSettingsR
     )
 
+import Handler.Periods
+    ( getPeriodsR, postPeriodsR
+    , getPeriodR, postPeriodR
+    , getPeriodNewR, getPeriodEditR, postPeriodDeleR
+    )
+
+import Handler.Projects
+    ( getProjectsR, postProjectsR
+    , getProjectR, postProjectR
+    , getProjectNewR, getProjectEditR, postProjectDeleR
+    )
+
 import Handler.Users
     ( getUsersR, postUsersR
     , getUserR, postUserR

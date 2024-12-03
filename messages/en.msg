@@ -1,3 +1,9 @@
+Period: Period
+Periods: Periods
+PleaseAddIfYouWish: Please add if you wish
+NoDataYet: There is no data yet
+Project: Project
+Projects: Projects
 PasswordChanged: Password changed
 PasswordDoesNotMatch: The password does not match
 RepeatPassword: Repeat password

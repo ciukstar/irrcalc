@@ -32,7 +32,7 @@ import Data.ByteString (ByteString)
 import Data.Either (Either (Left, Right)) 
 import Data.Eq (Eq)
 import Data.Int (Int)
-import Data.Fixed (Fixed (MkFixed))
+import Data.Fixed (Fixed (MkFixed), Centi)
 import Data.Function ((.))
 import Data.Maybe (Maybe (Just))
 import Data.Ord (Ord)
@@ -71,6 +71,12 @@ import qualified Data.Aeson as A (Value (String, Bool))
 import Text.Blaze.Html.Renderer.Text (renderHtml)
 import Text.Blaze.Html ( toHtml ) 
 import Data.Text.Lazy (toStrict)
+import Data.Time.Calendar (Day)
+
+
+data CashFlowType = CashFlowTypeInflow | CashFlowTypeOutflow
+    deriving (Show, Read, Eq, Ord)
+derivePersistField "CashFlowType"
 
 
 data AuthenticationType = UserAuthTypePassword
@@ -78,11 +84,6 @@ data AuthenticationType = UserAuthTypePassword
                         | UserAuthTypeGoogle
     deriving (Show, Read, Eq, Ord)
 derivePersistField "AuthenticationType"
-
-
-data NotificationStatus = NotificationStatusUnread | NotificationStatusRead
-    deriving (Show, Read, Eq, Ord)
-derivePersistField "NotificationStatus"
 
 
 data StoreType = StoreTypeDatabase | StoreTypeSession | StoreTypeGoogleSecretManager
