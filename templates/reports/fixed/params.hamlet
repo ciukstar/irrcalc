@@ -1,0 +1,10 @@
+
+^{widgetTopbar (Just (HomeR,[])) (msgr MsgReportParameters) idOverlay Nothing Nothing}
+
+<main.responsive>
+
+  <form method=post action=@{ReportFixedRunR pid} enctype=#{et}>
+    ^{fw}
+    <nav>
+      <button type=submit>
+        _{MsgGenerateReport}

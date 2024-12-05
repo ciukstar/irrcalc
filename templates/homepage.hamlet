@@ -3,8 +3,11 @@
 
 <main.responsive.no-padding ##{idMain}>
 
-  <h5.intro.small.center-align>
-    _{MsgWelcomeTo} _{MsgAppName}
+  <form method=post action=@{HomeR} enctype=#{et}>
+    ^{fw}
+    <nav>
+      <button type=submit>
+        _{MsgReportsFixedName}
 
 
 $if not (null msgs)

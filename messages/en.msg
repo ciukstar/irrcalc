@@ -1,3 +1,10 @@
+Article: Article
+Periodicity: Periodicity
+ConstructionArea: Construction area
+GenerateReport: Generate report
+ReportsFixedName: Calculation (Change of Land Plot Fixed)
+Inflation: Inflation
+ReportParameters: Report parameters
 Period: Period
 Periods: Periods
 PleaseAddIfYouWish: Please add if you wish

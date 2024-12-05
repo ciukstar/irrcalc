@@ -1,3 +1,10 @@
+Article: Статья
+Periodicity: Периодичность
+ConstructionArea: Площадь застройки
+GenerateReport: Сформировать отчет
+ReportsFixedName: Расчет (Смена ЗУ фикс)
+Inflation: Инфляция
+ReportParameters: Параметры отчета
 Period: Период
 Periods: Периоды
 PleaseAddIfYouWish: Пожалуйста, добавьте, если хотите

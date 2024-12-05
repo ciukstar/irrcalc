@@ -32,7 +32,7 @@ import Data.ByteString (ByteString)
 import Data.Either (Either (Left, Right)) 
 import Data.Eq (Eq)
 import Data.Int (Int)
-import Data.Fixed (Fixed (MkFixed), Centi)
+import Data.Fixed (Fixed (MkFixed), Centi, HasResolution (resolution))
 import Data.Function ((.))
 import Data.Maybe (Maybe (Just))
 import Data.Ord (Ord)
@@ -40,7 +40,7 @@ import qualified Data.Proxy as DP (Proxy)
 import Data.Text (pack, unpack) 
 import Data.Time.Calendar.Month (Month)
 import Data.Time.Clock
-    ( UTCTime, NominalDiffTime, nominalDiffTimeToSeconds, secondsToNominalDiffTime)
+    ( NominalDiffTime, nominalDiffTimeToSeconds, secondsToNominalDiffTime)
 
 import Database.Esqueleto.Experimental (SqlString)
 import Database.Persist
@@ -54,7 +54,10 @@ import GHC.Integer (Integer)
 import GHC.Num ((*))
 import GHC.Real ((^))
 
-import Prelude (truncate, undefined, fromIntegral, flip, quotRem, div)
+import Prelude
+    ( Double, truncate, undefined, fromIntegral, flip, quotRem, div, fromInteger
+    , round
+    )
 
 import Text.Hamlet (Html)
 import Text.Printf (printf)
@@ -258,6 +261,14 @@ nominalDiffTimeToMinutes =
 minutesToNominalDiffTime :: Int -> NominalDiffTime
 minutesToNominalDiffTime =
     secondsToNominalDiffTime . MkFixed . (* (^) @Integer @Integer 10 12) . (* 60) . fromIntegral
+
+floatToCenti :: Double -> Centi
+floatToCenti = floatToFixed
+
+
+floatToFixed :: HasResolution a => Double -> Fixed a
+floatToFixed x = y where
+  y = MkFixed (round (fromInteger (resolution y) * x))
 
 
 {-- nominalDiffTimeToHours :: NominalDiffTime -> Double

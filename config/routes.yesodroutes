@@ -1,7 +1,10 @@
 -- By default this file is used by `parseRoutesFile` in Foundation.hs
 -- Syntax for this file here: https://www.yesodweb.com/book/routing-and-handlers
 
-/ HomeR GET
+/reports/#ProjectId/fixed/run    ReportFixedRunR    POST
+/reports/#ProjectId/fixed/params ReportFixedParamsR GET
+
+/ HomeR GET POST
 
 /docs DocsR GET
 /lang LangR POST
