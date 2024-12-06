@@ -1,3 +1,8 @@
+Reports: Reports
+Rules: Rules
+LandPlotPurposeChange: Change of Purpose of Land Plot
+GeneralPlanDocuments: General Plan Documents
+EveryJanuary: Every January
 Article: Article
 Periodicity: Periodicity
 ConstructionArea: Construction area

@@ -22,6 +22,8 @@
 
 /data DataR:
 
+    /reports ReportsR GET
+
     /periods/#PeriodId/dele PeriodDeleR POST
     /periods/#PeriodId/edit PeriodEditR GET
     /periods/new/form       PeriodNewR  GET

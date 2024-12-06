@@ -1,3 +1,8 @@
+Reports: Отчеты
+Rules: Правила
+LandPlotPurposeChange: Смена назначения ЗУ
+GeneralPlanDocuments: Документы на ГенПлан
+EveryJanuary: Каждый январь
 Article: Статья
 Periodicity: Периодичность
 ConstructionArea: Площадь застройки

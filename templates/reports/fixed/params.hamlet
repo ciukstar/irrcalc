@@ -3,8 +3,13 @@
 
 <main.responsive>
 
-  <form method=post action=@{ReportFixedRunR pid} enctype=#{et}>
-    ^{fw}
-    <nav>
-      <button type=submit>
-        _{MsgGenerateReport}
+  <div.tabs.min>
+    <a.active href=#>_{MsgRules}
+    <a href=#>_{MsgSequence}
+    
+  <div.page.padding.active>
+    <form method=post action=@{ReportFixedRunR pid} enctype=#{et}>
+      ^{fw}
+      <nav>
+        <button type=submit>
+          _{MsgGenerateReport}

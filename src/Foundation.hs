@@ -211,6 +211,9 @@ instance Yesod App where
     isAuthorized ServiceWorkerR _ = return Authorized
 
     isAuthorized HomeR _ = setUltDestCurrent >> return Authorized
+
+    
+    isAuthorized (DataR ReportsR) _ = setUltDestCurrent >> return Authorized
     
     isAuthorized (ReportFixedParamsR _) _ = return Authorized
     isAuthorized (ReportFixedRunR _) _ = return Authorized

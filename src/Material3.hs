@@ -99,7 +99,7 @@ md3textareaWidget v = [whamlet|
     
 md3selectWidget :: RenderMessage m FormMessage => FieldView m -> WidgetFor m ()
 md3selectWidget v = [whamlet|
-  <div.field.label.suffix.border.round :isJust (fvErrors v):.invalid>
+  <div.field.label.suffix.border.round.small :isJust (fvErrors v):.invalid>
     ^{fvInput v}
     <label for=#{fvId v}>
       #{fvLabel v}
@@ -113,7 +113,7 @@ md3selectWidget v = [whamlet|
 
 md3widget :: RenderMessage m FormMessage => FieldView m -> WidgetFor m ()
 md3widget v = [whamlet|
-  <div.field.label.border.round :isJust (fvErrors v):.invalid>
+  <div.field.label.border.round.small :isJust (fvErrors v):.invalid>
 
     ^{fvInput v}
     <label for=#{fvId v}>

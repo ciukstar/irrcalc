@@ -18,6 +18,10 @@
       <i.no-round>home
       <span>_{MsgHome}
 
+    <a href=@{DataR ReportsR} :curr == Just (DataR ReportsR):.active>
+      <i.no-round>lab_profile
+      <span>_{MsgReports}
+      
     <a href=@{DataR ProjectsR} :curr == Just (DataR ProjectsR):.active>
       <i.no-round>overview
       <span>_{MsgProjects}
