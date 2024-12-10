@@ -1,0 +1,14 @@
+
+^{widgetTopbar (Just (DataR $ RuleR oid rid,[])) (msgr MsgRule) idOverlay Nothing Nothing}
+
+<main.responsive>
+
+  <form.margin method=post action=@{DataR $ RuleR oid rid} enctype=#{et} novalidate>
+    ^{fw}
+    <nav.right-align>
+      <a.button.transparent href=@{DataR $ RuleR oid rid}>
+        _{MsgCancel}
+      <button.primary type=submit>
+        _{MsgSave}
+
+  ^{widgetSnackbar msgs}

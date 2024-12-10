@@ -77,7 +77,7 @@ import Data.Text.Lazy (toStrict)
 import Data.Time.Calendar (Day)
 
 
-data CashFlowType = CashFlowTypeInflow | CashFlowTypeOutflow
+data CashFlowType = Inflow | Outflow
     deriving (Show, Read, Eq, Ord)
 derivePersistField "CashFlowType"
 

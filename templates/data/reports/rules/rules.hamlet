@@ -1,0 +1,37 @@
+
+^{widgetTopbar (Just (DataR ReportsR,[])) (msgr MsgReport) idOverlay Nothing Nothing}
+
+<main.responsive.no-padding>
+
+  <div.tabs.min>
+    <a href=@{DataR $ ReportR oid}>_{MsgDetails}
+    <a.active href=@{DataR $ RulesR oid}>_{MsgRules}
+    
+  <div.page.active>
+    $if null rules
+      <figure.margin.pading.center-align>
+        <i.extra>folder_open
+        <figcaption>
+          <div>_{MsgNoDataYet}.
+          <div>_{MsgPleaseAddIfYouWish}.
+
+    $else
+      $forall Entity rid (Rule _ name flow _ _) <- rules
+        <a.row.padding.wave href=@{DataR $ RuleR oid rid}>
+
+          <div.content.max>
+            <h6.headline.large-text>
+              #{name}
+
+            <div.supporting-text.small-text>
+              #{show flow}
+
+          <i>arrow_forward_ios
+
+        <hr>
+
+  <a.button.circle.extra.fixed.right.bottom.margin.medium-elevate href=@{DataR $ RuleNewR oid}
+    style="z-index:1" onclick="event.stopPropagation()">
+    <i>add
+
+  ^{widgetSnackbar msgs}

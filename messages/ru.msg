@@ -1,3 +1,8 @@
+Outflow: Отток
+Inflow: Приток
+Flow: Поток
+Rule: Правило
+Report: Отчет
 Reports: Отчеты
 Rules: Правила
 LandPlotPurposeChange: Смена назначения ЗУ

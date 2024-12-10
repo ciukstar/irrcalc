@@ -21,6 +21,18 @@ Project
     descr Textarea Maybe
     UniqueProject name
 
+Rule
+    report ReportId OnDeleteCascade
+    article Text
+    flow CashFlowType
+    after RuleId Maybe OnDeleteSetNull
+    descr Textarea Maybe
+
+Report
+    name Text
+    descr Textarea Maybe
+    UniqueReport name
+
 UserPhoto
     user UserId OnDeleteCascade
     mime Text

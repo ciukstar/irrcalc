@@ -86,7 +86,7 @@ md3checkboxWidget v = [whamlet|
     
 md3textareaWidget :: RenderMessage m FormMessage => FieldView m -> WidgetFor m ()
 md3textareaWidget v = [whamlet|
-  <div.field.border.round.label.textarea :isJust (fvErrors v):.invalid>
+  <div.field.border.round.label.textarea.small :isJust (fvErrors v):.invalid>
     ^{fvInput v}
     <label for=#{fvId v}>
       #{fvLabel v}

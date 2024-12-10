@@ -1,0 +1,28 @@
+
+^{widgetTopbar Nothing (msgr MsgReports) idOverlay Nothing Nothing}
+
+<main.responsive.no-padding>
+  $if null reports
+    <figure.margin.pading.center-align>
+      <i.extra>folder_open
+      <figcaption>
+        <div>_{MsgNoDataYet}.
+        <div>_{MsgPleaseAddIfYouWish}.
+ 
+  $else
+    $forall Entity pid (Report name _) <- reports
+      <a.row.padding.wave href=@{DataR $ ReportR pid}>
+
+        <div.content.max>
+          <h6.headline.large-text>
+            #{name}
+
+        <i>arrow_forward_ios
+
+      <hr>
+
+  <a.button.circle.extra.fixed.right.bottom.margin.medium-elevate href=@{DataR ReportNewR}
+    style="z-index:1" onclick="event.stopPropagation()">
+    <i>add
+
+  ^{widgetSnackbar msgs}

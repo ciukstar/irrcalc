@@ -1,0 +1,42 @@
+
+^{widgetTopbar (Just (DataR $ RulesR oid,[])) (msgr MsgRule) idOverlay (Just idDialogDelete) (Just $ DataR $ RuleEditR oid rid)}
+
+<main.responsive.no-padding>
+
+  <div.tabs.min>
+    <a.active href=@{DataR $ RuleR oid rid}>_{MsgDetails}
+    <a href=@{DataR $ RulesR oid}>_{MsgRules}
+    
+  <div.page.padding.active>
+
+    $maybe Entity _ (Rule _ name flow _ descr) <- rule
+      <dl.margin>
+
+        <dt.bold>_{MsgName}
+        <dd.small-margin>
+          #{name}
+
+        <dt.bold>_{MsgFlow}
+        <dd.small-margin>
+          #{show flow}
+
+        <dt.bold>_{MsgDescription}
+        <dd.small-margin>
+          $maybe descr <- descr
+            #{descr}
+
+    ^{widgetSnackbar msgs}
+
+<div.overlay ##{idOverlay} data-ui=##{idOverlay}>
+
+<dialog ##{idDialogDelete}>
+  <h5>_{MsgConfirmPlease}
+  <div>_{MsgDeleteAreYouSure}
+  <nav.right-align.no-space>
+    <button.transparent.link data-ui=##{idOverlay}
+      onclick="document.getElementById('#{idDialogDelete}').close()">
+      _{MsgCancel}
+    <form method=post action=@{DataR $ RuleDeleR oid rid} enctype=#{et0}>
+      ^{fw0}
+      <button.primary type=submit>
+        _{MsgDele}

@@ -1,0 +1,37 @@
+
+^{widgetTopbar (Just (ReportFixedParamsR pid,[])) (msgr MsgReportsFixedName) idOverlay Nothing Nothing}
+
+<main.responsive>
+
+  <div.scroll.surface>
+    <table.border>
+      <thead>
+        <tr>
+          <th>_{MsgArticle}
+          $forall j <- range 126
+            <th>#{j}
+      <tbody>
+        $forall (article,_,amount,sequences,offs,lengths) <- rules
+          <tr.wave>
+            <th scope=row>
+              #{article}
+            $forall sequence <- sequences
+              $case sequence
+                $of After n
+                  $forall j <- range (after (n - 1))
+                    <td>
+                $of Before n
+                $of SameAs n
+                $of Repeat n
+
+            $forall off <- offs
+              $case off
+                $of Off n
+                  $forall j <- range n
+                    <td>
+
+            $forall len <- lengths
+              $case len
+                $of Length n
+                  $forall j <- range n
+                    <td>#{show amount}

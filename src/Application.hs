@@ -52,9 +52,17 @@ import System.Log.FastLogger
 import Handler.Common (getFaviconR, getRobotsR, getSitemapR, getWebAppManifestR)
 import Handler.Docs ( getDocsR )
 
+import Handler.Rules
+    ( getRulesR, postRulesR
+    , getRuleR, postRuleR
+    , getRuleNewR, getRuleEditR, postRuleDeleR
+    )
+
 import Handler.Reports
-    ( getReportsR
-    , getReportFixedParamsR, postReportFixedRunR
+    ( getReportFixedParamsR, postReportFixedRunR
+    , getReportsR, postReportsR
+    , getReportR, postReportR
+    , getReportNewR, getReportEditR, postReportDeleR
     )
 
 import Handler.Home

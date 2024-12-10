@@ -1,0 +1,38 @@
+
+^{widgetTopbar (Just (DataR ReportsR,[])) (msgr MsgReport) idOverlay (Just idDialogDelete) (Just $ DataR $ ReportEditR pid)}
+
+<main.responsive.no-padding>
+
+  <div.tabs.min>
+    <a.active href=@{DataR $ ReportR pid}>_{MsgDetails}
+    <a href=@{DataR $ RulesR pid}>_{MsgRules}
+    
+  <div.page.padding.active>
+
+    $maybe Entity _ (Report name descr) <- project
+      <dl.margin>
+
+        <dt.bold>_{MsgName}
+        <dd.small-margin>
+          #{name}
+
+        <dt.bold>_{MsgDescription}
+        <dd.small-margin>
+          $maybe descr <- descr
+            #{descr}
+
+    ^{widgetSnackbar msgs}
+
+<div.overlay ##{idOverlay} data-ui=##{idOverlay}>
+
+<dialog ##{idDialogDelete}>
+  <h5>_{MsgConfirmPlease}
+  <div>_{MsgDeleteAreYouSure}
+  <nav.right-align.no-space>
+    <button.transparent.link data-ui=##{idOverlay}
+      onclick="document.getElementById('#{idDialogDelete}').close()">
+      _{MsgCancel}
+    <form method=post action=@{DataR $ ReportDeleR pid} enctype=#{et0}>
+      ^{fw0}
+      <button.primary type=submit>
+        _{MsgDele}

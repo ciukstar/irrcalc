@@ -22,7 +22,17 @@
 
 /data DataR:
 
-    /reports ReportsR GET
+    /reports/#ReportId/rules/#RuleId/dele RuleDeleR POST
+    /reports/#ReportId/rules/#RuleId/edit RuleEditR GET
+    /reports/#ReportId/rules/new/form     RuleNewR  GET
+    /reports/#ReportId/rules/#RuleId      RuleR     GET POST
+    /reports/#ReportId/rules              RulesR    GET POST
+    
+    /reports/#ReportId/dele ReportDeleR POST
+    /reports/#ReportId/edit ReportEditR GET
+    /reports/new/form       ReportNewR  GET
+    /reports/#ReportId      ReportR     GET POST
+    /reports                ReportsR    GET POST
 
     /periods/#PeriodId/dele PeriodDeleR POST
     /periods/#PeriodId/edit PeriodEditR GET

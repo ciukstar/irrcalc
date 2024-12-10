@@ -1,3 +1,8 @@
+Outflow: Outflow
+Inflow: Inflow
+Flow: Flow
+Rule: Rule
+Report: Report
 Reports: Reports
 Rules: Rules
 LandPlotPurposeChange: Change of Purpose of Land Plot

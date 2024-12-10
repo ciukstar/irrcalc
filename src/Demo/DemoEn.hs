@@ -26,7 +26,7 @@ import Model
       , userPhotoPhoto
       )
     , Project (Project, projectName, projectStart, projectEnd, projectDescr)
-    , Period (Period, periodName, periodStart, periodEnd)
+    , Period (Period, periodName, periodStart, periodEnd), Report (Report, reportName, reportDescr)
     )
     
 import Settings (AppSettings)
@@ -137,5 +137,10 @@ fillDemoEn _appSettings = do
                          , periodEnd = YearMonthDay 2024 10 31
                          }
     iid1 <- insert period1
+
+    let report1 = Report { reportName = "Calculation (Change of Land Plot Fixed)"
+                         , reportDescr = Nothing
+                         }
+    rid1 <- insert report1
     
     return ()

@@ -211,9 +211,6 @@ instance Yesod App where
     isAuthorized ServiceWorkerR _ = return Authorized
 
     isAuthorized HomeR _ = setUltDestCurrent >> return Authorized
-
-    
-    isAuthorized (DataR ReportsR) _ = setUltDestCurrent >> return Authorized
     
     isAuthorized (ReportFixedParamsR _) _ = return Authorized
     isAuthorized (ReportFixedRunR _) _ = return Authorized
@@ -237,6 +234,18 @@ instance Yesod App where
     isAuthorized (DataR (PeriodR _)) _ = isAdmin
     isAuthorized (DataR PeriodsR) _ = setUltDestCurrent >> isAdmin
 
+    
+    isAuthorized (DataR (RuleDeleR _ _)) _ = isAdmin
+    isAuthorized (DataR (RuleEditR _ _)) _ = isAdmin
+    isAuthorized (DataR (RuleNewR _)) _ = isAdmin
+    isAuthorized (DataR (RuleR _ _)) _ = isAdmin
+    isAuthorized (DataR (RulesR _)) _ = isAdmin
+    
+    isAuthorized (DataR (ReportDeleR _)) _ = isAdmin
+    isAuthorized (DataR (ReportEditR _)) _ = isAdmin
+    isAuthorized (DataR ReportNewR) _ = isAdmin
+    isAuthorized (DataR (ReportR _)) _ = isAdmin
+    isAuthorized (DataR ReportsR) _ = setUltDestCurrent >> isAdmin
     
     isAuthorized (DataR (ProjectDeleR _)) _ = isAdmin
     isAuthorized (DataR (ProjectEditR _)) _ = isAdmin

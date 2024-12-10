@@ -23,7 +23,7 @@ import Model
       ( UserPhoto, userPhotoUser, userPhotoMime, userPhotoAttribution
       , userPhotoPhoto
       )
-    , Project (Project, projectName, projectStart, projectEnd, projectDescr)
+    , Project (Project, projectName, projectStart, projectEnd, projectDescr), Report (Report, reportName, reportDescr)
     )
     
 import Settings (AppSettings)
@@ -128,5 +128,10 @@ fillDemoRu _appSettings = do
                            , projectDescr = Just "Второй проект"
                            }
     pid2 <- insert project2
+
+    let report1 = Report { reportName = "Расчет (Смена ЗУ фикс)"
+                         , reportDescr = Nothing
+                         }
+    rid1 <- insert report1
 
     return ()

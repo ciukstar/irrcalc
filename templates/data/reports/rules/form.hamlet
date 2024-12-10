@@ -1,0 +1,10 @@
+
+#{extra}
+
+$forall v <- [articleV]
+  ^{md3widget v}
+
+$forall v <- [flowV]
+  ^{md3selectWidget v}
+
+^{md3textareaWidget descrV}
