@@ -4,34 +4,27 @@
 <main.responsive>
 
   <div.scroll.surface>
-    <table.border>
+    <table>
       <thead>
         <tr>
-          <th>_{MsgArticle}
-          $forall j <- range 126
-            <th>#{j}
+          <th.border>_{MsgArticle}
+          $forall j <- range 50
+            <th.border>#{j}
       <tbody>
-        $forall (article,_,amount,sequences,offs,lengths) <- rules
+        $forall (i,article,_,amount,sequences) <- rules
           <tr.wave>
-            <th scope=row>
+            <th.border scope=row>
               #{article}
             $forall sequence <- sequences
               $case sequence
-                $of After n
-                  $forall j <- range (after (n - 1))
-                    <td>
-                $of Before n
-                $of SameAs n
-                $of Repeat n
-
-            $forall off <- offs
-              $case off
-                $of Off n
-                  $forall j <- range n
-                    <td>
-
-            $forall len <- lengths
-              $case len
-                $of Length n
-                  $forall j <- range n
-                    <td>#{show amount}
+                $of After n o l
+                  $forall j <- range ((offset i [] sequence) + o)
+                    <td.border>
+                  $forall j <- range l
+                    <td.border>#{amount}
+                    
+                $of Before n o l
+                  $forall j <- range (((offset i [] sequence) - o) - l)
+                    <td.border>
+                  $forall j <- range l
+                    <td.border>#{amount}

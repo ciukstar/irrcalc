@@ -1,3 +1,7 @@
+RelativeSequence: Относительная последовательность
+Before: До
+After: После
+NumberSign: №
 Outflow: Отток
 Inflow: Приток
 Flow: Поток

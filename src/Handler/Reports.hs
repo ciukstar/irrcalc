@@ -11,7 +11,7 @@ module Handler.Reports
   , getReportNewR, getReportEditR, postReportDeleR
   ) where
 
-import Data.List ((!?)) 
+import Data.List ((!?), unsnoc) 
 import Data.Fixed (Centi)
 import Data.Text (Text)
 import Data.Time.Calendar (Day)
@@ -38,7 +38,7 @@ import Foundation
       , MsgAlreadyExists, MsgName, MsgDescription, MsgDele, MsgCancel
       , MsgDeleteAreYouSure, MsgConfirmPlease, MsgReport, MsgSave, MsgRecordAdded
       , MsgRecordEdited, MsgInvalidFormData, MsgRecordDeleted, MsgReportsFixedName
-      , MsgDetails
+      , MsgDetails, MsgNumberSign, MsgInflow, MsgOutflow, MsgType, MsgAfter, MsgBefore, MsgRule, MsgRelativeSequence
       )
     )
 
@@ -70,61 +70,69 @@ import Yesod.Form.Types
 import Yesod.Persist.Core (YesodPersist(runDB))
 
 import System.Cron (yearly, CronSchedule)
+import Control.Monad (forM)
 
 
 type Inflation  = (Text, Double, CronSchedule)
 inflation :: Inflation
 inflation = ("Inflation",0.1,yearly)
 
-data Sequence = After Int | Before Int | SameAs Int | Repeat Int
 
-newtype Off = Off Int
+data Sequence = After  Int Int Int
+              | Before Int Int Int
+    deriving (Show, Read)
 
-newtype Length = Length Int
-
-type Rules = [ ( Text          -- ^ Article
+type Rules = [ ( Int           -- Index
+               , Text          -- Article
                , CashFlowType
-               , Double        -- ^ Value
+               , Double        -- Value
                , [Sequence]
-               , [Off]           -- ^ Offset
-               , [Length]
                )
              ]
 
 rules :: Rules
-rules = [ (" 1.Смена назначения ЗУ",  Outflow, 4166667, [After 0], [Off 0], [Length 12])
-        
-        -- , (" 2.Документы на ГенПлан", Outflow, 5000000, [After 0], [Off 14, Off 18], [Length 1])
-        , (" 2.Документы на ГенПлан", Outflow, 5000000, [After 1], [Off 2, Off 6], [Length 1])
-        
-        , (" 3.Стройка", Outflow, 55902000, [After 2,After 3,Repeat 6], [Off 10], [Length 5,Length 12])
-        , (" 4.Рабочая документация на очереди",Outflow, 1815000, [Before 3,Repeat 7], [Off 1],[Length 4])
-        , (" 5.Дорога внутри парка",Outflow,1995290,[SameAs 3], [Off 0],[Length 5, Length 12])
-        , (" 6.Лес билеты",Outflow,5552755,[After 0],[Off 1], [Length 50])
-        , (" 7.Лес срубка",Outflow,807673,[After 0],[Off 1], [Length 50])
-        , (" 8.ФОТ Аутсорс Команды",Outflow,1331000,[SameAs 3], [Off 0],[Length 5, Length 12])
-        , (" 9.Маркетинг",Outflow,1331000,[SameAs 8], [Off 0],[Length 5, Length 12])
-        , ("10.Коммуникации",Outflow,5926011,[SameAs 3], [Off 0],[Length 5, Length 12])
-        , ("11.Непредвиденные расходы",Outflow,11650590,[SameAs 3], [Off 0],[Length 5, Length 12])
-        , ("12.Продажа",Inflow,113135000,[After 3,Repeat 7],[Off 0],[Length 6])
-        , ("13.Комиссия брокера",Outflow,3394050,[SameAs 12,Repeat 7],[Off 0],[Length 6])
-        , ("14.Налог на доход",Outflow,76026720,[After 0], [Off 3],[Length 1])
+rules = [ (1,"Смена назначения ЗУ",  Outflow, 4.0, [After 0 0 2])
+        , (2,"Документы на ГенПлан", Outflow, 5.0, [After 1 2 1, After 2 3 1]) -- 
+        , (3,"Стройка 1", Outflow, 6.0, [After 2 3 2])
+        , (4,"Рабочая документация на очереди",Outflow, 9.0, [Before 3 1 4])
+        , (5,"Стройка 2", Outflow, 7.0, [After 4 0 3])
+        , (6,"Рабочая документация на очереди",Outflow, 10.0, [Before 5 1 4])
+        , (7,"Стройка 3", Outflow, 8.0, [After 6 0 7]) 
+        , (8,"Рабочая документация на очереди",Outflow, 11.0, [Before 7 1 4])
         ]
+
+
+
+offset :: Int -> [Sequence] -> Sequence -> Int
+offset i xs (After n _ _) = case rules !? (n - 1) of
+    Nothing -> 0
+      
+    Just (j,_,_,_,_) | j == i -> case unsnoc xs of
+      Nothing -> 0
+      Just (xs'',e@(After _ o'' l'')) -> o'' + l'' + offset j xs'' e
+      Just (xs'',e@(Before _ o'' l'')) -> o'' + l'' + offset j xs'' e
+      
+    Just (j,_,_,_,xs') -> case unsnoc xs' of
+      Nothing -> 0
+      Just (xs'',e@(After _ o'' l'')) -> o'' + l'' + offset j xs'' e
+      Just (xs'',e@(Before _ o'' l'')) -> (-o'') + offset j xs'' e
+      
+offset i xs (Before n _ _) = case rules !? (n - 1) of
+    Nothing -> 0
+      
+    Just (j,_,_,_,_) | j == i -> case unsnoc xs of
+      Nothing -> 0
+      Just (xs'',e@(After _ o'' _l'')) -> o'' + offset j xs'' e
+      Just (xs'',e@(Before _ o'' l'')) -> o'' + l'' + offset j xs'' e
+      
+    Just (j,_,_,_,xs') -> case unsnoc xs' of
+      Nothing -> 0
+      Just (xs'',e@(After _ o'' _l'')) -> o'' + offset j xs'' e
+      Just (xs'',e@(Before _ o'' l'')) -> o'' + l'' + offset j xs'' e
 
 
 range :: Int -> [Int]
 range n = [1..n]
-
-
-after :: Int -> Int
-after j = let x = rules !? j
-          in case x of
-               Just (_,_,_,sequences,offs,lengths) -> n + m + k
-                 where
-                   n = length sequences
-                   m = length offs
-                   k = length lengths
-               Nothing -> 0
 
 
 postReportFixedRunR :: ProjectId -> Handler Html
@@ -149,167 +157,51 @@ getReportFixedParamsR pid = do
 data Periodicity = PeriodicityEveryJanuary
     deriving (Show, Read, Eq)
 
-type Constr = (Centi,Maybe Day, Int, Maybe Periodicity, Maybe Day) 
 
-data ParamsFixed = ParamsFixed
-    { paramsFixedInflation :: Constr
-    , paramsFixedConstructionArea :: Constr
-    , paramsFixedGeneralPlanDocs :: Constr
-    , paramsFixedPurposeChange :: Constr
-    }
-
-
-formParamsFixed :: Form ParamsFixed
+formParamsFixed :: Form [((Double,CashFlowType),[Text])]
 formParamsFixed extra = do
-    
-    let ps = optionsPairs [(MsgEveryJanuary, PeriodicityEveryJanuary)]
-    
-    (inflationR, inflationV) <- mreq doubleField FieldSettings
-        { fsLabel = SomeMessage MsgInflation
+
+    amounts <- forM rules $ \(i,article,typ,amount,ss) -> mreq doubleField FieldSettings
+        { fsLabel = SomeMessage article
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (Just 10)
-    
-    (inflationSartR, inflationStartV) <- mopt dayField FieldSettings
-        { fsLabel = SomeMessage MsgStart
+        } (Just amount)
+
+    let flowTypes = optionsPairs [(MsgOutflow, Outflow), (MsgInflow,Inflow)]
+
+    flows <- forM rules $ \(i,article,typ,amount,ss) -> mreq (selectField flowTypes) FieldSettings
+        { fsLabel = SomeMessage MsgType
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } Nothing
-    
-    (inflationLengthR, inflationLengthV) <- mreq intField FieldSettings
-        { fsLabel = SomeMessage MsgDuration
+        } (Just typ)
+
+    let sequenceOptions = optionsPairs [(MsgAfter, "After"),(MsgBefore, "Before")]
+
+    sequenses <- forM rules $ \(i,article,typ,amount,ss) -> forM ss $ \s -> mreq (selectField sequenceOptions) FieldSettings
+        { fsLabel = SomeMessage MsgSequence
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (Just 1)
-    
-    (inflationPeriodicityR, inflationPeriodicityV) <- mopt (selectField ps) FieldSettings
-        { fsLabel = SomeMessage MsgPeriodicity
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (pure $ Just PeriodicityEveryJanuary)
-    
-    (inflationEndR, inflationEndV) <- mopt dayField FieldSettings
-        { fsLabel = SomeMessage MsgEnd
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } Nothing
-    
-    (constructionAreaR, constructionAreaV) <- mreq doubleField FieldSettings
-        { fsLabel = SomeMessage MsgConstructionArea
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (Just 50)
-    
-    (gplanDocsR, gplanDocsV) <- mreq doubleField FieldSettings
-        { fsLabel = SomeMessage MsgGeneralPlanDocuments
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (Just 5000000)
-    
-    (gplanDocsSartR, gplanDocsStartV) <- mopt dayField FieldSettings
-        { fsLabel = SomeMessage MsgStart
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } Nothing
-    
-    (gplanDocsLengthR, gplanDocsLengthV) <- mreq intField FieldSettings
-        { fsLabel = SomeMessage MsgDuration
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (Just 1)
-    
-    (gplanDocsPeriodicityR, gplanDocsPeriodicityV) <- mopt (selectField ps) FieldSettings
-        { fsLabel = SomeMessage MsgPeriodicity
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } Nothing
-    
-    (gplanDocsEndR, gplanDocsEndV) <- mopt dayField FieldSettings
-        { fsLabel = SomeMessage MsgEnd
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } Nothing
-    
-    (purposeChangeR, purposeChangeV) <- mreq doubleField FieldSettings
-        { fsLabel = SomeMessage MsgLandPlotPurposeChange
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (Just 4166667)
-    
-    (purposeChangeSartR, purposeChangeStartV) <- mopt dayField FieldSettings
-        { fsLabel = SomeMessage MsgStart
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } Nothing
-    
-    (purposeChangeLengthR, purposeChangeLengthV) <- mreq intField FieldSettings
-        { fsLabel = SomeMessage MsgDuration
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (Just 12)
-    
-    (purposeChangePeriodicityR, purposeChangePeriodicityV) <- mopt (selectField ps) FieldSettings
-        { fsLabel = SomeMessage MsgPeriodicity
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } Nothing
-    
-    (purposeChangeEndR, purposeChangeEndV) <- mopt dayField FieldSettings
-        { fsLabel = SomeMessage MsgEnd
-        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } Nothing
+        } (Just $ case s of After {} -> "After"; Before {} -> "Before")
+
+
+    let r = zip <$> ( zip <$> traverse fst amounts <*> traverse fst flows
+                    )
+            <*> traverse (traverse fst) sequenses
+
+    let idxs = zip [1 :: Int ..] (zip (snd <$> amounts) (zip (snd <$> flows) ((snd <$>) <$> sequenses)))
         
-    let r = ParamsFixed
-            <$> ( (,,,,)
-                  <$> (floatToCenti <$> inflationR)
-                  <*> inflationSartR
-                  <*> inflationLengthR
-                  <*> inflationPeriodicityR
-                  <*> inflationEndR
-                )
-            <*> ( (,,,,)
-                  <$> (floatToCenti <$> constructionAreaR)
-                  <*> pure Nothing
-                  <*> pure 1
-                  <*> pure Nothing
-                  <*> pure Nothing
-                )
-            <*> ( (,,,,)
-                  <$> (floatToCenti <$> gplanDocsR)
-                  <*> gplanDocsSartR
-                  <*> gplanDocsLengthR
-                  <*> gplanDocsPeriodicityR
-                  <*> gplanDocsEndR
-                )
-            <*> ( (,,,,)
-                  <$> (floatToCenti <$> purposeChangeR)
-                  <*> purposeChangeSartR
-                  <*> purposeChangeLengthR
-                  <*> purposeChangePeriodicityR
-                  <*> purposeChangeEndR
-                )
-            
     let w = [whamlet|
                     ^{extra}
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>_{MsgArticle}
-                          <th>_{MsgStart}
-                          <th>_{MsgDuration}
-                          <th>_{MsgPeriodicity}
-                          <th>_{MsgEnd}
-                      <tbody>
-                        $forall t <- []
-                        <tr>
-                          <td>^{md3widget inflationV}
-                          <td>^{md3widget inflationStartV}
-                          <td>^{md3widget inflationLengthV}
-                          <td>^{md3selectWidget inflationPeriodicityV}
-                          <td>^{md3widget inflationEndV}
-                        <tr>
-                          <td>^{md3widget constructionAreaV}
-                          <td>
-                          <td>
-                          <td>
-                          <td>
-                        <tr>
-                          <td>^{md3widget gplanDocsV}
-                          <td>^{md3widget gplanDocsStartV}
-                          <td>^{md3widget gplanDocsLengthV}
-                          <td>^{md3selectWidget gplanDocsPeriodicityV}
-                          <td>^{md3widget gplanDocsEndV}
-                        <tr>
-                          <td>^{md3widget purposeChangeV}
-                          <td>^{md3widget purposeChangeStartV}
-                          <td>^{md3widget purposeChangeLengthV}
-                          <td>^{md3selectWidget purposeChangePeriodicityV}
-                          <td>^{md3widget purposeChangeEndV}
+                    $forall (i,(a,(f,ss))) <- idxs
+                      <details>
+                        <summary>_{MsgRule} _{MsgNumberSign}#{i}
+                        <table>
+                          <tbody>
+                            <tr>
+                              <td>^{md3widget a}
+                              <td>^{md3selectWidget f}
+                        <fieldset>
+                          <legend>_{MsgRelativeSequence}
+                          $forall s <- ss
+                            ^{md3selectWidget s}
+                          
                     |]
     return (r,w)
  
