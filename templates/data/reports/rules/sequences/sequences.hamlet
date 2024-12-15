@@ -1,0 +1,40 @@
+
+^{widgetTopbar (Just (DataR $ RuleR oid rid,[])) (msgr MsgSequence) idOverlay Nothing Nothing}
+
+<main.responsive.no-padding>
+
+  <div.tabs.min>
+    <a href=@{DataR $ RuleR oid rid}>_{MsgDetails}
+    <a.active href=@{DataR $ RuleSequencesR oid rid}>_{MsgSequences}
+    
+  <div.page.active>
+
+    $if null sequences
+      <figure.margin.pading.center-align>
+        <i.extra>folder_open
+        <figcaption>
+          <div>_{MsgNoDataYet}.
+          <div>_{MsgPleaseAddIfYouWish}.
+
+    $else
+      $forall Entity sid (Sequence _ _ name) <- sequences
+        <a.row.padding.wave href=@{DataR $ RuleSequenceR oid rid sid}>
+
+          <div.content.max>
+            <h6.headline.large-text>
+              $case name 
+                $of RuleTypeBefore
+                  _{MsgBefore}
+                  
+                $of RuleTypeAfter
+                  _{MsgAfter}
+
+          <i>arrow_forward_ios
+
+        <hr>
+
+  <a.button.circle.extra.fixed.right.bottom.margin.medium-elevate href=@{DataR $ RuleSequenceNewR oid rid}
+    style="z-index:1" onclick="event.stopPropagation()">
+    <i>add
+
+  ^{widgetSnackbar msgs}

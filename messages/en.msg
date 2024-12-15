@@ -1,3 +1,7 @@
+Sequences: Sequences
+Index: Index
+Length: Length
+Offset: Offset
 RelativeSequence: Relative sequence
 Before: Before
 After: After

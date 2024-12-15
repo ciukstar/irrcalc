@@ -1,3 +1,7 @@
+Sequences: Последовательности
+Index: Индекс
+Length: Длина
+Offset: Смещение
 RelativeSequence: Относительная последовательность
 Before: До
 After: После

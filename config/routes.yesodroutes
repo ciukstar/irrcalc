@@ -22,6 +22,10 @@
 
 /data DataR:
 
+    /reports/#ReportId/rules/#RuleId/sequences/new/form    RuleSequenceNewR GET
+    /reports/#ReportId/rules/#RuleId/sequences/#SequenceId RuleSequenceR    GET
+    /reports/#ReportId/rules/#RuleId/sequences             RuleSequencesR   GET POST
+
     /reports/#ReportId/rules/#RuleId/dele RuleDeleR POST
     /reports/#ReportId/rules/#RuleId/edit RuleEditR GET
     /reports/#ReportId/rules/new/form     RuleNewR  GET

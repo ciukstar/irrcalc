@@ -56,6 +56,9 @@ import Handler.Rules
     ( getRulesR, postRulesR
     , getRuleR, postRuleR
     , getRuleNewR, getRuleEditR, postRuleDeleR
+    , getRuleSequencesR, postRuleSequencesR
+    , getRuleSequenceR
+    , getRuleSequenceNewR
     )
 
 import Handler.Reports

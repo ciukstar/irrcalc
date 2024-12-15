@@ -77,6 +77,16 @@ import Data.Text.Lazy (toStrict)
 import Data.Time.Calendar (Day)
 
 
+data ParamName = ParamOffset | ParamLength
+    deriving (Show, Read, Eq, Ord)
+derivePersistField "ParamName"
+
+
+data RuleType = RuleTypeBefore | RuleTypeAfter
+    deriving (Show, Read, Eq, Ord)
+derivePersistField "RuleType"
+
+
 data CashFlowType = Inflow | Outflow
     deriving (Show, Read, Eq, Ord)
 derivePersistField "CashFlowType"

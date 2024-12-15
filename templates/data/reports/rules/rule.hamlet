@@ -5,12 +5,16 @@
 
   <div.tabs.min>
     <a.active href=@{DataR $ RuleR oid rid}>_{MsgDetails}
-    <a href=@{DataR $ RulesR oid}>_{MsgRules}
+    <a href=@{DataR $ RuleSequencesR oid rid}>_{MsgSequences}
     
   <div.page.padding.active>
 
-    $maybe Entity _ (Rule _ name flow _ descr) <- rule
+    $maybe Entity _ (Rule _ idx name flow descr) <- rule
       <dl.margin>
+
+        <dt.bold>_{MsgIndex}
+        <dd.small-margin>
+          #{idx}
 
         <dt.bold>_{MsgName}
         <dd.small-margin>

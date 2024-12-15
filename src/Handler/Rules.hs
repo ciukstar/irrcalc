@@ -8,18 +8,20 @@ module Handler.Rules
     ( getRulesR, postRulesR
     , getRuleR, postRuleR
     , getRuleNewR, getRuleEditR, postRuleDeleR
+    , getRuleSequencesR, postRuleSequencesR
+    , getRuleSequenceR
+    , getRuleSequenceNewR
     ) where
 
-import Data.Fixed (Centi)
 import Data.Text (Text)
-import Data.Time.Calendar (Day)
 
 import Database.Esqueleto.Experimental
     ( select, selectOne, from, table, where_, val
-    , (^.), (==.), orderBy, asc
+    , (^.), (==.)
+    , orderBy, asc, Value (unValue)
     )
 import Database.Persist
-    ( Entity (Entity), entityVal, delete, insert_, replace
+    ( Entity (Entity), entityVal, insert, delete, insert_, replace, insertMany_
     ) 
 
 import Foundation
@@ -27,28 +29,35 @@ import Foundation
     , Route (DataR)
     , DataR
       ( RuleR, RuleNewR, RuleDeleR, RuleEditR, RulesR, RulesR
-      , ReportR, ReportsR
+      , ReportR, ReportsR, RuleSequencesR, RuleSequenceR, RuleSequenceNewR
       )
     , AppMessage
       ( MsgReportParameters, MsgInflation, MsgGenerateReport, MsgPeriodicity
-      , MsgConstructionArea, MsgArticle, MsgStart, MsgEnd, MsgEveryJanuary
-      , MsgGeneralPlanDocuments, MsgDuration, MsgLandPlotPurposeChange
+      , MsgArticle, MsgStart, MsgEnd, MsgEveryJanuary, MsgGeneralPlanDocuments
+      , MsgDuration, MsgLandPlotPurposeChange
       , MsgRules, MsgSequence, MsgRules, MsgPleaseAddIfYouWish, MsgNoDataYet
       , MsgAlreadyExists, MsgName, MsgDescription, MsgDele, MsgCancel
       , MsgDeleteAreYouSure, MsgConfirmPlease, MsgRule, MsgSave, MsgRecordAdded
       , MsgRecordEdited, MsgInvalidFormData, MsgRecordDeleted, MsgDetails, MsgFlow
-      , MsgInflow, MsgOutflow, MsgReport
+      , MsgInflow, MsgOutflow, MsgReport, MsgIndex, MsgSequences, MsgAfter
+      , MsgBefore, MsgType, MsgOffset, MsgLength
       )
     )
 
 import Material3 (md3widget, md3selectWidget, md3textareaWidget)
 
 import Model
-       ( CashFlowType (Outflow, Inflow)
-       , ProjectId, floatToCenti, msgSuccess, msgError
+       ( msgSuccess, msgError
+       , CashFlowType (Outflow, Inflow)
        , ReportId
-       , RuleId, Rule (Rule, ruleArticle, ruleDescr, ruleFlow)
-       , EntityField (RuleId, RuleArticle, RuleReport)
+       , RuleId, Rule (Rule, ruleArticle, ruleDescr, ruleFlow, ruleIndex)
+       , SequenceId, Sequence (Sequence, sequenceRelation, sequenceName)
+       , RuleType (RuleTypeAfter, RuleTypeBefore), ParamName (ParamOffset, ParamLength)
+       , Param (Param)
+       , EntityField
+         ( RuleId, RuleArticle, RuleReport, RuleIndex, SequenceRule, SequenceId
+         , ParamName, ParamVal
+         )
        )
 
 import Settings (widgetFile)
@@ -57,18 +66,126 @@ import Text.Hamlet (Html)
 
 import Yesod.Core
     ( Yesod(defaultLayout), setTitleI, newIdent, getMessageRender, whamlet
-    , SomeMessage (SomeMessage), getMessages, addMessageI, redirect
+    , SomeMessage (SomeMessage), MonadHandler (liftHandler), getMessages
+    , addMessageI, redirect
     )
 import Yesod.Form.Functions (generateFormPost, mreq, mopt, checkM, runFormPost)
 import Yesod.Form.Fields
-    ( doubleField, dayField, selectField, optionsPairs, intField, textField
-    , textareaField
+    ( selectField, optionsPairs, intField, textField, textareaField
     )
 import Yesod.Form.Types
     ( FieldSettings(FieldSettings, fsLabel, fsId, fsName, fsTooltip, fsAttrs)
-    , FormResult (FormSuccess), Field
+    , Field, FormResult (FormSuccess)
     )
 import Yesod.Persist.Core (YesodPersist(runDB))
+
+
+getRuleSequenceR :: ReportId -> RuleId -> SequenceId -> Handler Html
+getRuleSequenceR oid rid sid = undefined 
+
+
+postRuleSequencesR :: ReportId -> RuleId -> Handler Html
+postRuleSequencesR oid rid = do
+    ((fr,fw),et) <- runFormPost $ formSequence rid Nothing
+
+    case fr of
+      FormSuccess (r,params) -> do
+          sid <- runDB $ insert r
+          runDB $ insertMany_ (uncurry (Param sid) <$> params)
+          redirect $ DataR $ RuleSequencesR oid rid
+          
+      _otherwise -> do
+          msgr <- getMessageRender
+          msgs <- getMessages
+          defaultLayout $ do
+              setTitleI MsgSequences
+              idOverlay <- newIdent
+              $(widgetFile "data/reports/rules/sequences/new")
+
+
+getRuleSequenceNewR :: ReportId -> RuleId -> Handler Html
+getRuleSequenceNewR oid rid = do
+    (fw,et) <- generateFormPost $ formSequence rid Nothing
+
+    msgr <- getMessageRender
+    msgs <- getMessages
+    defaultLayout $ do
+        setTitleI MsgSequences
+        idOverlay <- newIdent
+        $(widgetFile "data/reports/rules/sequences/new")
+
+
+formSequence :: RuleId -> Maybe (Entity Sequence) -> Form (Sequence,[(ParamName, Int)])
+formSequence rid sequence extra = do
+
+    rules <- liftHandler $ runDB $ select $ do
+        x <- from $ table @Rule
+        orderBy [asc (x ^. RuleIndex)]
+        return x
+
+    let typeOpts = optionsPairs [(MsgAfter, RuleTypeAfter), (MsgBefore, RuleTypeBefore)]
+
+    (typeR,typeV) <- mreq (selectField typeOpts) FieldSettings
+        { fsLabel = SomeMessage MsgType
+        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
+        } (sequenceName . entityVal <$> sequence)
+
+    let relationOpts = optionsPairs $ (\(Entity oid (Rule _ _ name _ _)) -> (name,oid)) <$> rules
+
+    (relationR,relationV) <- mopt (selectField relationOpts) FieldSettings
+        { fsLabel = SomeMessage MsgRule
+        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
+        } (sequenceRelation . entityVal <$> sequence)
+
+    offset <- liftHandler $ (unValue <$>) <$> runDB ( selectOne $ do
+        x <- from $ table @Param
+        where_ $ x ^. ParamName ==. val ParamOffset
+        return $ x ^. ParamVal )
+
+    (offsetR,offsetV) <- mreq intField FieldSettings
+        { fsLabel = SomeMessage MsgOffset
+        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
+        } offset
+
+    paramDur <- liftHandler $ (unValue <$>) <$> runDB ( selectOne $ do
+        x <- from $ table @Param
+        where_ $ x ^. ParamName ==. val ParamLength
+        return $ x ^. ParamVal )
+
+    (durationR,durationV) <- mreq intField FieldSettings
+        { fsLabel = SomeMessage MsgDuration
+        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
+        } paramDur
+    
+    let r = (,) <$> (Sequence rid <$> relationR <*> typeR)
+            <*> sequenceA [ (,) ParamOffset <$> offsetR
+                          , (,) ParamOffset <$> durationR
+                          ]
+    let w = [whamlet|
+                    ^{extra}
+                    ^{md3selectWidget typeV}
+                    ^{md3selectWidget relationV}
+                    ^{md3widget offsetV}
+                    ^{md3widget durationV}
+                    |]
+    return (r,w)    
+
+
+getRuleSequencesR :: ReportId -> RuleId -> Handler Html
+getRuleSequencesR oid rid = do
+
+    sequences <- runDB $ select $ do
+        x <- from $ table @Sequence
+        where_ $ x ^. SequenceRule ==. val rid
+        orderBy [asc (x ^. SequenceId)]
+        return x
+
+    msgr <- getMessageRender
+    msgs <- getMessages
+    defaultLayout $ do
+        setTitleI MsgSequences
+        idOverlay <- newIdent
+        $(widgetFile "data/reports/rules/sequences/sequences")
  
 
 postRuleDeleR :: ReportId -> RuleId -> Handler Html
@@ -160,12 +277,17 @@ getRuleNewR oid = do
 formRule :: ReportId -> Maybe (Entity Rule) -> Form Rule
 formRule rid rule extra = do
 
-    (articleR,articleV) <- mreq uniqueNameField FieldSettings
+    (idxR,idxV) <- mreq uniqueIndexField FieldSettings
+        { fsLabel = SomeMessage MsgIndex
+        , fsTooltip = Nothing, fsId = Nothing, fsName = Nothing, fsAttrs = []
+        } (ruleIndex . entityVal <$> rule)
+
+    (articleR,articleV) <- mreq textField FieldSettings
         { fsLabel = SomeMessage MsgArticle
         , fsTooltip = Nothing, fsId = Nothing, fsName = Nothing, fsAttrs = []
         } (ruleArticle . entityVal <$> rule)
 
-    let flows = optionsPairs [(MsgInflow,Outflow),(MsgOutflow,Inflow)]
+    let flows = optionsPairs [(MsgOutflow,Outflow),(MsgInflow,Inflow)]
 
     (flowR,flowV) <- mreq (selectField flows) FieldSettings
         { fsLabel = SomeMessage MsgFlow
@@ -177,10 +299,28 @@ formRule rid rule extra = do
         , fsTooltip = Nothing, fsId = Nothing, fsName = Nothing, fsAttrs = []
         } (ruleDescr . entityVal <$> rule)
 
-    let r = Rule rid <$> articleR <*> flowR <*> pure Nothing <*> descrR
+    let r = Rule rid <$> idxR <*> articleR <*> flowR <*> descrR
 
     return (r,$(widgetFile "data/reports/rules/form"))   
   where
+      uniqueIndexField :: Field Handler Int
+      uniqueIndexField = checkM uniqueIndex intField
+
+      uniqueIndex :: Int -> Handler (Either AppMessage Int)
+      uniqueIndex idx = do
+          x <- runDB $ selectOne $ do
+              x <- from $ table @Rule
+              where_ $ x ^. RuleReport ==. val rid
+              where_ $ x ^. RuleIndex ==. val idx
+              return x
+              
+          return $ case x of
+            Nothing -> Right idx
+            Just (Entity pid' _) -> case rule of
+              Nothing -> Left MsgAlreadyExists
+              Just (Entity pid'' _) | pid' == pid'' -> Right idx
+                                    | otherwise -> Left MsgAlreadyExists
+                                    
       uniqueNameField :: Field Handler Text
       uniqueNameField = checkM uniqueName textField
 

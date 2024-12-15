@@ -1,7 +1,7 @@
 
 #{extra}
 
-$forall v <- [articleV]
+$forall v <- [idxV, articleV]
   ^{md3widget v}
 
 $forall v <- [flowV]

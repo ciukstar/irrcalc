@@ -11,7 +11,7 @@ module Handler.Reports
   , getReportNewR, getReportEditR, postReportDeleR
   ) where
 
-import Data.List ((!?), unsnoc) 
+import Data.List ((!?), unsnoc, zipWith4, zip4) 
 import Data.Fixed (Centi)
 import Data.Text (Text)
 import Data.Time.Calendar (Day)
@@ -36,9 +36,10 @@ import Foundation
       , MsgGeneralPlanDocuments, MsgDuration, MsgLandPlotPurposeChange
       , MsgRules, MsgSequence, MsgReports, MsgPleaseAddIfYouWish, MsgNoDataYet
       , MsgAlreadyExists, MsgName, MsgDescription, MsgDele, MsgCancel
-      , MsgDeleteAreYouSure, MsgConfirmPlease, MsgReport, MsgSave, MsgRecordAdded
-      , MsgRecordEdited, MsgInvalidFormData, MsgRecordDeleted, MsgReportsFixedName
-      , MsgDetails, MsgNumberSign, MsgInflow, MsgOutflow, MsgType, MsgAfter, MsgBefore, MsgRule, MsgRelativeSequence
+      , MsgDeleteAreYouSure, MsgConfirmPlease, MsgReport, MsgSave, MsgRule
+      , MsgRecordEdited, MsgInvalidFormData, MsgRecordDeleted, MsgBefore
+      , MsgDetails, MsgNumberSign, MsgInflow, MsgOutflow, MsgType, MsgAfter
+      , MsgRelativeSequence, MsgReportsFixedName, MsgRecordAdded, MsgOffset, MsgLength
       )
     )
 
@@ -158,35 +159,65 @@ data Periodicity = PeriodicityEveryJanuary
     deriving (Show, Read, Eq)
 
 
-formParamsFixed :: Form [((Double,CashFlowType),[Text])]
+formParamsFixed :: Form [((Double,CashFlowType),[(Text,Int,Int,Int)])]
 formParamsFixed extra = do
 
-    amounts <- forM rules $ \(i,article,typ,amount,ss) -> mreq doubleField FieldSettings
+    amounts <- forM rules $ \(_,article,_,amount,_) -> mreq doubleField FieldSettings
         { fsLabel = SomeMessage article
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
         } (Just amount)
 
     let flowTypes = optionsPairs [(MsgOutflow, Outflow), (MsgInflow,Inflow)]
 
-    flows <- forM rules $ \(i,article,typ,amount,ss) -> mreq (selectField flowTypes) FieldSettings
+    flows <- forM rules $ \(_,_,typ,_,_) -> mreq (selectField flowTypes) FieldSettings
         { fsLabel = SomeMessage MsgType
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
         } (Just typ)
 
     let sequenceOptions = optionsPairs [(MsgAfter, "After"),(MsgBefore, "Before")]
 
-    sequenses <- forM rules $ \(i,article,typ,amount,ss) -> forM ss $ \s -> mreq (selectField sequenceOptions) FieldSettings
+    sequenses <- forM rules $ \(_,_,_,_,ss) -> forM ss $ \s -> mreq (selectField sequenceOptions) FieldSettings
         { fsLabel = SomeMessage MsgSequence
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
         } (Just $ case s of After {} -> "After"; Before {} -> "Before")
 
+    relatives <- forM rules $ \(_,_,_,_,ss) -> forM ss $ \s -> mreq intField FieldSettings
+        { fsLabel = SomeMessage MsgRule
+        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
+        } (Just $ case s of After n _ _ -> n; Before n _ _ -> n)
 
+    offsets <- forM rules $ \(_,_,_,_,ss) -> forM ss $ \s -> mreq intField FieldSettings
+        { fsLabel = SomeMessage MsgOffset
+        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
+        } (Just $ case s of After _ o _ -> o; Before _ o _ -> o)
+
+    lengths <- forM rules $ \(_,_,_,_,ss) -> forM ss $ \s -> mreq intField FieldSettings
+        { fsLabel = SomeMessage MsgLength
+        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
+        } (Just $ case s of After _ _ l -> l; Before _ _ l -> l)
+
+    let ss = traverse (traverse fst) sequenses
+    let rs = traverse (traverse fst) relatives
+    let os = traverse (traverse fst) offsets
+    let ls = traverse (traverse fst) lengths
+
+    let params = zipWith4 zip4 <$> ss <*> rs <*> os <*> ls
+    
     let r = zip <$> ( zip <$> traverse fst amounts <*> traverse fst flows
                     )
-            <*> traverse (traverse fst) sequenses
+            <*> params
 
-    let idxs = zip [1 :: Int ..] (zip (snd <$> amounts) (zip (snd <$> flows) ((snd <$>) <$> sequenses)))
-        
+    let idxs = zip [1 :: Int ..]
+            ( zip (snd <$> amounts)
+              ( zip (snd <$> flows)
+                (zipWith4 zip4
+                  ((snd <$>) <$> sequenses)
+                  ((snd <$>) <$> relatives)
+                  ((snd <$>) <$> offsets)
+                  ((snd <$>) <$> lengths))
+              )
+            )
+            
     let w = [whamlet|
                     ^{extra}
                     $forall (i,(a,(f,ss))) <- idxs
@@ -199,8 +230,14 @@ formParamsFixed extra = do
                               <td>^{md3selectWidget f}
                         <fieldset>
                           <legend>_{MsgRelativeSequence}
-                          $forall s <- ss
-                            ^{md3selectWidget s}
+                          $forall (s,p1,p2,p3) <- ss
+                            <table>
+                              <tbody>
+                                <tr>
+                                  <td>^{md3selectWidget s}
+                                  <td>^{md3widget p1}
+                                  <td>^{md3widget p2}
+                                  <td>^{md3widget p3}
                           
                     |]
     return (r,w)

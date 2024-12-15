@@ -21,12 +21,23 @@ Project
     descr Textarea Maybe
     UniqueProject name
 
+Param
+    sequence SequenceId
+    name ParamName
+    val Int
+
+Sequence
+    rule RuleId OnDeleteCascade
+    relation RuleId OnDeleteCascade Maybe
+    name RuleType
+
 Rule
     report ReportId OnDeleteCascade
+    index Int
     article Text
     flow CashFlowType
-    after RuleId Maybe OnDeleteSetNull
     descr Textarea Maybe
+    UniqueRule report index
 
 Report
     name Text
