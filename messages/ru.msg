@@ -1,3 +1,4 @@
+Parameters: Параметры
 Sequences: Последовательности
 Index: Индекс
 Length: Длина

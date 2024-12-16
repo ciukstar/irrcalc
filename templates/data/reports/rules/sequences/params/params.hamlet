@@ -1,0 +1,41 @@
+
+^{widgetTopbar (Just (DataR $ RuleSequencesR oid rid,[])) (msgr MsgSequence) idOverlay Nothing Nothing}
+
+<main.responsive.no-padding>
+
+  <div.tabs.min>
+    <a href=@{DataR $ RuleSequenceR oid rid sid}>
+      _{MsgDetails}
+      
+    <a.active href=@{DataR $ RuleSequenceParamsR oid rid sid}>
+      _{MsgParameters}
+    
+  <div.page.active>
+
+    $if null params
+      <figure.margin.pading.center-align>
+        <i.extra>folder_open
+        <figcaption>
+          <div>_{MsgNoDataYet}.
+          <div>_{MsgPleaseAddIfYouWish}.
+
+    $else
+      $forall Entity pid (Param _ name value) <- params
+        <a.row.padding.wave href=#>
+
+          <div.content.max>
+            <h6.headline.large-text>
+              #{show name}
+              
+            <div.supporting-text.small-text>
+              #{show value}
+
+          <i>arrow_forward_ios
+
+        <hr>
+
+  <a.button.circle.extra.fixed.right.bottom.margin.medium-elevate href=#
+    style="z-index:1" onclick="event.stopPropagation()">
+    <i>add
+
+  ^{widgetSnackbar msgs}

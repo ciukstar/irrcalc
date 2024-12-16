@@ -77,7 +77,7 @@ import Data.Text.Lazy (toStrict)
 import Data.Time.Calendar (Day)
 
 
-data ParamName = ParamOffset | ParamLength
+data ParamName = ParamRuleIndex | ParamOffset | ParamDuration
     deriving (Show, Read, Eq, Ord)
 derivePersistField "ParamName"
 

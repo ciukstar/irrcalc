@@ -23,7 +23,13 @@ import Model
       ( UserPhoto, userPhotoUser, userPhotoMime, userPhotoAttribution
       , userPhotoPhoto
       )
-    , Project (Project, projectName, projectStart, projectEnd, projectDescr), Report (Report, reportName, reportDescr)
+    , Project (Project, projectName, projectStart, projectEnd, projectDescr)
+    , Report (Report, reportName, reportDescr)
+    , Rule (Rule, ruleReport, ruleIndex, ruleArticle, ruleFlow, ruleDescr)
+    , Sequence (Sequence, sequenceRule, sequenceName)
+    , Param (Param, paramSequence, paramName, paramValue)
+    , CashFlowType (Outflow), RuleType (RuleTypeAfter)
+    , ParamName (ParamRuleIndex, ParamOffset, ParamDuration)
     )
     
 import Settings (AppSettings)
@@ -132,6 +138,36 @@ fillDemoRu _appSettings = do
     let report1 = Report { reportName = "Расчет (Смена ЗУ фикс)"
                          , reportDescr = Nothing
                          }
-    rid1 <- insert report1
+    rpt1 <- insert report1
+
+    let rule11 = Rule { ruleReport = rpt1
+                      , ruleIndex = 1
+                      , ruleArticle = "Покупка объекта"
+                      , ruleFlow = Outflow
+                      , ruleDescr = Nothing
+                      }
+
+    rid11 <- insert rule11
+
+    let sequence111 = Sequence { sequenceRule = rid11
+                               , sequenceName = RuleTypeAfter
+                               }
+
+    sid111 <- insert sequence111
+
+    insert_ Param { paramSequence = sid111
+                  , paramName = ParamRuleIndex
+                  , paramValue = 0
+                  }
+
+    insert_ Param { paramSequence = sid111
+                  , paramName = ParamOffset
+                  , paramValue = 0
+                  }
+
+    insert_ Param { paramSequence = sid111
+                  , paramName = ParamDuration
+                  , paramValue = 1
+                  }
 
     return ()

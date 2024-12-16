@@ -26,7 +26,14 @@ import Model
       , userPhotoPhoto
       )
     , Project (Project, projectName, projectStart, projectEnd, projectDescr)
-    , Period (Period, periodName, periodStart, periodEnd), Report (Report, reportName, reportDescr)
+    , Period (Period, periodName, periodStart, periodEnd)
+    , Report (Report, reportName, reportDescr)
+    , Rule (Rule, ruleIndex, ruleArticle, ruleFlow, ruleDescr, ruleReport)
+    , CashFlowType (Outflow)
+    , Sequence (Sequence, sequenceRule, sequenceName)
+    , RuleType (RuleTypeAfter)
+    , Param (Param, paramName, paramValue, paramSequence)
+    , ParamName (ParamRuleIndex, ParamOffset, ParamDuration)
     )
     
 import Settings (AppSettings)
@@ -141,6 +148,36 @@ fillDemoEn _appSettings = do
     let report1 = Report { reportName = "Calculation (Change of Land Plot Fixed)"
                          , reportDescr = Nothing
                          }
-    rid1 <- insert report1
+    rpt1 <- insert report1
+
+    let rule11 = Rule { ruleReport = rpt1
+                      , ruleIndex = 1
+                      , ruleArticle = "Object purchase"
+                      , ruleFlow = Outflow
+                      , ruleDescr = Nothing
+                      }
+
+    rid11 <- insert rule11
+
+    let sequence111 = Sequence { sequenceRule = rid11
+                               , sequenceName = RuleTypeAfter
+                               }
+
+    sid111 <- insert sequence111
+
+    insert_ Param { paramSequence = sid111
+                  , paramName = ParamRuleIndex
+                  , paramValue = 0
+                  }
+
+    insert_ Param { paramSequence = sid111
+                  , paramName = ParamOffset
+                  , paramValue = 0
+                  }
+
+    insert_ Param { paramSequence = sid111
+                  , paramName = ParamDuration
+                  , paramValue = 1
+                  }
     
     return ()

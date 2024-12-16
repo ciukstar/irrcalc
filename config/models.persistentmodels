@@ -22,13 +22,13 @@ Project
     UniqueProject name
 
 Param
-    sequence SequenceId
+    sequence SequenceId OnDeleteCascade
     name ParamName
-    val Int
+    value Int
+    UniqueParam sequence name
 
 Sequence
     rule RuleId OnDeleteCascade
-    relation RuleId OnDeleteCascade Maybe
     name RuleType
 
 Rule

@@ -17,7 +17,7 @@
           <div>_{MsgPleaseAddIfYouWish}.
 
     $else
-      $forall Entity sid (Sequence _ _ name) <- sequences
+      $forall Entity sid (Sequence _ name) <- sequences
         <a.row.padding.wave href=@{DataR $ RuleSequenceR oid rid sid}>
 
           <div.content.max>

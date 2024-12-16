@@ -17,14 +17,14 @@
               #{article}
             $forall sequence <- sequences
               $case sequence
-                $of After n o l
-                  $forall j <- range ((offset i [] sequence) + o)
+                $of After _ o l
+                  $forall _ <- range ((offset i [] sequence) + o)
                     <td.border>
-                  $forall j <- range l
+                  $forall _ <- range l
                     <td.border>#{amount}
                     
-                $of Before n o l
-                  $forall j <- range (((offset i [] sequence) - o) - l)
+                $of Before _ o l
+                  $forall _ <- range (((offset i [] sequence) - o) - l)
                     <td.border>
-                  $forall j <- range l
+                  $forall _ <- range l
                     <td.border>#{amount}

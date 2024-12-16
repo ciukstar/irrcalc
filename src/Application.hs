@@ -57,8 +57,11 @@ import Handler.Rules
     , getRuleR, postRuleR
     , getRuleNewR, getRuleEditR, postRuleDeleR
     , getRuleSequencesR, postRuleSequencesR
-    , getRuleSequenceR
+    , getRuleSequenceR, postRuleSequenceR
     , getRuleSequenceNewR
+    , getRuleSequenceEditR
+    , postRuleSequenceDeleR
+    , getRuleSequenceParamsR
     )
 
 import Handler.Reports

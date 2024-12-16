@@ -11,10 +11,10 @@ module Handler.Reports
   , getReportNewR, getReportEditR, postReportDeleR
   ) where
 
+import Control.Monad (forM)
+
 import Data.List ((!?), unsnoc, zipWith4, zip4) 
-import Data.Fixed (Centi)
 import Data.Text (Text)
-import Data.Time.Calendar (Day)
 
 import Database.Esqueleto.Experimental
     ( select, selectOne, from, table, where_, val
@@ -31,22 +31,21 @@ import Foundation
       ( ReportR, ReportNewR, ReportDeleR, ReportEditR, ReportsR, RulesR
       )
     , AppMessage
-      ( MsgReportParameters, MsgInflation, MsgGenerateReport, MsgPeriodicity
-      , MsgConstructionArea, MsgArticle, MsgStart, MsgEnd, MsgEveryJanuary
-      , MsgGeneralPlanDocuments, MsgDuration, MsgLandPlotPurposeChange
-      , MsgRules, MsgSequence, MsgReports, MsgPleaseAddIfYouWish, MsgNoDataYet
+      ( MsgReportParameters, MsgGenerateReport, MsgArticle, MsgNoDataYet
+      , MsgRules, MsgSequence, MsgReports, MsgPleaseAddIfYouWish
       , MsgAlreadyExists, MsgName, MsgDescription, MsgDele, MsgCancel
       , MsgDeleteAreYouSure, MsgConfirmPlease, MsgReport, MsgSave, MsgRule
       , MsgRecordEdited, MsgInvalidFormData, MsgRecordDeleted, MsgBefore
       , MsgDetails, MsgNumberSign, MsgInflow, MsgOutflow, MsgType, MsgAfter
-      , MsgRelativeSequence, MsgReportsFixedName, MsgRecordAdded, MsgOffset, MsgLength
+      , MsgRelativeSequence, MsgReportsFixedName, MsgRecordAdded, MsgOffset
+      , MsgLength
       )
     )
 
 import Material3 (md3widget, md3selectWidget, md3textareaWidget)
 
 import Model
-       ( ProjectId, floatToCenti, msgSuccess, msgError
+       ( ProjectId, msgSuccess, msgError
        , ReportId, Report (Report, reportName, reportDescr)
        , EntityField (ReportId, ReportName), CashFlowType (Outflow, Inflow)
        )
@@ -61,7 +60,7 @@ import Yesod.Core
     )
 import Yesod.Form.Functions (generateFormPost, mreq, mopt, checkM, runFormPost)
 import Yesod.Form.Fields
-    ( doubleField, dayField, selectField, optionsPairs, intField, textField
+    ( doubleField, selectField, optionsPairs, intField, textField
     , textareaField
     )
 import Yesod.Form.Types
@@ -69,14 +68,6 @@ import Yesod.Form.Types
     , FormResult (FormSuccess), Field
     )
 import Yesod.Persist.Core (YesodPersist(runDB))
-
-import System.Cron (yearly, CronSchedule)
-import Control.Monad (forM)
-
-
-type Inflation  = (Text, Double, CronSchedule)
-inflation :: Inflation
-inflation = ("Inflation",0.1,yearly)
 
 
 data Sequence = After  Int Int Int
@@ -116,7 +107,7 @@ offset i xs (After n _ _) = case rules !? (n - 1) of
     Just (j,_,_,_,xs') -> case unsnoc xs' of
       Nothing -> 0
       Just (xs'',e@(After _ o'' l'')) -> o'' + l'' + offset j xs'' e
-      Just (xs'',e@(Before _ o'' l'')) -> (-o'') + offset j xs'' e
+      Just (xs'',e@(Before _ o'' _)) -> (-o'') + offset j xs'' e
       
 offset i xs (Before n _ _) = case rules !? (n - 1) of
     Nothing -> 0

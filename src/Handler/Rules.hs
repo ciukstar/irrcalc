@@ -9,20 +9,26 @@ module Handler.Rules
     , getRuleR, postRuleR
     , getRuleNewR, getRuleEditR, postRuleDeleR
     , getRuleSequencesR, postRuleSequencesR
-    , getRuleSequenceR
+    , getRuleSequenceR, postRuleSequenceR
     , getRuleSequenceNewR
+    , getRuleSequenceEditR
+    , postRuleSequenceDeleR
+    , getRuleSequenceParamsR
     ) where
 
-import Data.Text (Text)
+import Control.Monad (forM_)
+
+import Data.Text (pack)
 
 import Database.Esqueleto.Experimental
-    ( select, selectOne, from, table, where_, val
+    ( Value (unValue), select, selectOne, from, table, where_, val, orderBy, asc
     , (^.), (==.)
-    , orderBy, asc, Value (unValue)
     )
 import Database.Persist
     ( Entity (Entity), entityVal, insert, delete, insert_, replace, insertMany_
-    ) 
+    , upsertBy
+    )
+import qualified Database.Persist as P ((=.)) 
 
 import Foundation
     ( Handler, Form, widgetTopbar, widgetSnackbar
@@ -30,6 +36,7 @@ import Foundation
     , DataR
       ( RuleR, RuleNewR, RuleDeleR, RuleEditR, RulesR, RulesR
       , ReportR, ReportsR, RuleSequencesR, RuleSequenceR, RuleSequenceNewR
+      , RuleSequenceEditR, RuleSequenceDeleR, RuleSequenceParamsR
       )
     , AppMessage
       ( MsgReportParameters, MsgInflation, MsgGenerateReport, MsgPeriodicity
@@ -40,7 +47,7 @@ import Foundation
       , MsgDeleteAreYouSure, MsgConfirmPlease, MsgRule, MsgSave, MsgRecordAdded
       , MsgRecordEdited, MsgInvalidFormData, MsgRecordDeleted, MsgDetails, MsgFlow
       , MsgInflow, MsgOutflow, MsgReport, MsgIndex, MsgSequences, MsgAfter
-      , MsgBefore, MsgType, MsgOffset, MsgLength
+      , MsgBefore, MsgType, MsgOffset, MsgLength, MsgParameters
       )
     )
 
@@ -51,13 +58,14 @@ import Model
        , CashFlowType (Outflow, Inflow)
        , ReportId
        , RuleId, Rule (Rule, ruleArticle, ruleDescr, ruleFlow, ruleIndex)
-       , SequenceId, Sequence (Sequence, sequenceRelation, sequenceName)
-       , RuleType (RuleTypeAfter, RuleTypeBefore), ParamName (ParamOffset, ParamLength)
+       , SequenceId, Sequence (Sequence, sequenceName)
+       , RuleType (RuleTypeAfter, RuleTypeBefore)
+       , ParamName (ParamOffset, ParamDuration, ParamRuleIndex)
        , Param (Param)
        , EntityField
          ( RuleId, RuleArticle, RuleReport, RuleIndex, SequenceRule, SequenceId
-         , ParamName, ParamVal
-         )
+         , ParamName, ParamValue, ParamSequence, ParamId
+         ), Unique (UniqueParam)
        )
 
 import Settings (widgetFile)
@@ -80,8 +88,99 @@ import Yesod.Form.Types
 import Yesod.Persist.Core (YesodPersist(runDB))
 
 
+getRuleSequenceParamsR :: ReportId -> RuleId -> SequenceId -> Handler Html
+getRuleSequenceParamsR oid rid sid = do
+
+    params <- runDB $ select $ do
+        x <- from $ table @Param
+        where_ $ x ^. ParamSequence ==. val sid
+        orderBy [asc (x ^. ParamId)]
+        return x
+
+    msgr <- getMessageRender
+    msgs <- getMessages
+    defaultLayout $ do
+        setTitleI MsgParameters
+        idOverlay <- newIdent
+        $(widgetFile "data/reports/rules/sequences/params/params")
+
+
+postRuleSequenceDeleR :: ReportId -> RuleId -> SequenceId -> Handler Html
+postRuleSequenceDeleR oid rid sid = undefined
+
+
+getRuleSequenceEditR :: ReportId -> RuleId -> SequenceId -> Handler Html
+getRuleSequenceEditR oid rid sid = do
+
+    s <- runDB $ selectOne $ do
+        x <- from $ table @Sequence
+        where_ $ x ^. SequenceId ==. val sid
+        return x
+        
+    (fw,et) <- generateFormPost $ formSequence rid s
+
+    msgr <- getMessageRender
+    msgs <- getMessages
+    defaultLayout $ do
+        setTitleI MsgSequences 
+        idOverlay <- newIdent
+        $(widgetFile "data/reports/rules/sequences/edit")
+
+
+postRuleSequenceR :: ReportId -> RuleId -> SequenceId -> Handler Html
+postRuleSequenceR oid rid sid = do
+
+    s <- runDB $ selectOne $ do
+        x <- from $ table @Sequence
+        where_ $ x ^. SequenceId ==. val sid
+        return x
+        
+    ((fr,fw),et) <- runFormPost $ formSequence rid s
+    case fr of
+      FormSuccess (r,params) -> do
+          runDB $ replace sid r
+          forM_ params $ \(x,v) -> do
+              runDB $ upsertBy (UniqueParam sid x) (Param sid x v)
+                  [ ParamValue P.=. v]
+          redirect $ DataR $ RuleSequenceR oid rid sid
+          
+      _otherwise -> do
+          msgr <- getMessageRender
+          msgs <- getMessages
+          defaultLayout $ do
+              setTitleI MsgSequences 
+              idOverlay <- newIdent
+              $(widgetFile "data/reports/rules/sequences/edit")
+    
+
+
 getRuleSequenceR :: ReportId -> RuleId -> SequenceId -> Handler Html
-getRuleSequenceR oid rid sid = undefined 
+getRuleSequenceR oid rid sid = do
+
+    s <- runDB $ selectOne $ do
+        x <- from $ table @Sequence
+        where_ $ x ^. SequenceId ==. val sid
+        return x
+
+    params <- runDB $ select $ do
+        x <- from $ table @Param
+        where_ $ x ^. ParamSequence ==. val sid
+        orderBy [asc (x ^. ParamId)]
+        return x
+
+    (fw0,et0) <- generateFormPost formSequenceDelete
+
+    msgr <- getMessageRender
+    msgs <- getMessages
+    defaultLayout $ do
+        setTitleI MsgSequence
+        idOverlay <- newIdent
+        idDialogDelete <- newIdent        
+        $(widgetFile "data/reports/rules/sequences/sequence")
+
+
+formSequenceDelete :: Form ()
+formSequenceDelete extra = return (pure (), [whamlet|^{extra}|])
 
 
 postRuleSequencesR :: ReportId -> RuleId -> Handler Html
@@ -116,7 +215,7 @@ getRuleSequenceNewR oid rid = do
 
 
 formSequence :: RuleId -> Maybe (Entity Sequence) -> Form (Sequence,[(ParamName, Int)])
-formSequence rid sequence extra = do
+formSequence rid s extra = do
 
     rules <- liftHandler $ runDB $ select $ do
         x <- from $ table @Rule
@@ -128,19 +227,24 @@ formSequence rid sequence extra = do
     (typeR,typeV) <- mreq (selectField typeOpts) FieldSettings
         { fsLabel = SomeMessage MsgType
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (sequenceName . entityVal <$> sequence)
+        } (sequenceName . entityVal <$> s)
 
-    let relationOpts = optionsPairs $ (\(Entity oid (Rule _ _ name _ _)) -> (name,oid)) <$> rules
+    let relationOpts = optionsPairs $ (\(Entity _ (Rule _ i article _ _)) -> (pack (show i) <> ". " <> article,i)) <$> rules
 
-    (relationR,relationV) <- mopt (selectField relationOpts) FieldSettings
+    idx <- liftHandler $ (unValue <$>) <$> runDB ( selectOne $ do
+        x <- from $ table @Param
+        where_ $ x ^. ParamName ==. val ParamRuleIndex
+        return $ x ^. ParamValue )
+
+    (indexR,indexV) <- mreq (selectField relationOpts) FieldSettings
         { fsLabel = SomeMessage MsgRule
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (sequenceRelation . entityVal <$> sequence)
+        } idx
 
     offset <- liftHandler $ (unValue <$>) <$> runDB ( selectOne $ do
         x <- from $ table @Param
         where_ $ x ^. ParamName ==. val ParamOffset
-        return $ x ^. ParamVal )
+        return $ x ^. ParamValue )
 
     (offsetR,offsetV) <- mreq intField FieldSettings
         { fsLabel = SomeMessage MsgOffset
@@ -149,22 +253,23 @@ formSequence rid sequence extra = do
 
     paramDur <- liftHandler $ (unValue <$>) <$> runDB ( selectOne $ do
         x <- from $ table @Param
-        where_ $ x ^. ParamName ==. val ParamLength
-        return $ x ^. ParamVal )
+        where_ $ x ^. ParamName ==. val ParamDuration
+        return $ x ^. ParamValue )
 
     (durationR,durationV) <- mreq intField FieldSettings
         { fsLabel = SomeMessage MsgDuration
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
         } paramDur
     
-    let r = (,) <$> (Sequence rid <$> relationR <*> typeR)
-            <*> sequenceA [ (,) ParamOffset <$> offsetR
-                          , (,) ParamOffset <$> durationR
+    let r = ((,) . Sequence rid <$> typeR)
+            <*> sequenceA [ (,) ParamRuleIndex <$> indexR
+                          , (,) ParamOffset <$> offsetR
+                          , (,) ParamDuration <$> durationR
                           ]
     let w = [whamlet|
                     ^{extra}
                     ^{md3selectWidget typeV}
-                    ^{md3selectWidget relationV}
+                    ^{md3selectWidget indexV}
                     ^{md3widget offsetV}
                     ^{md3widget durationV}
                     |]
@@ -320,23 +425,6 @@ formRule rid rule extra = do
               Nothing -> Left MsgAlreadyExists
               Just (Entity pid'' _) | pid' == pid'' -> Right idx
                                     | otherwise -> Left MsgAlreadyExists
-                                    
-      uniqueNameField :: Field Handler Text
-      uniqueNameField = checkM uniqueName textField
-
-      uniqueName :: Text -> Handler (Either AppMessage Text)
-      uniqueName name = do
-          x <- runDB $ selectOne $ do
-              x <- from $ table @Rule
-              where_ $ x ^. RuleArticle ==. val name
-              return x
-              
-          return $ case x of
-            Nothing -> Right name
-            Just (Entity pid' _) -> case rule of
-              Nothing -> Left MsgAlreadyExists
-              Just (Entity pid'' _) | pid' == pid'' -> Right name
-                                    | otherwise -> Left MsgAlreadyExists
 
 
 getRuleR :: ReportId -> RuleId -> Handler Html
@@ -355,7 +443,7 @@ getRuleR oid rid = do
         setTitleI MsgRules
         idOverlay <- newIdent
         idDialogDelete <- newIdent        
-        $(widgetFile "data/reports/rules/rule") 
+        $(widgetFile "data/reports/rules/rule")
 
 
 formRuleDelete :: Form ()

@@ -235,6 +235,10 @@ instance Yesod App where
     isAuthorized (DataR PeriodsR) _ = setUltDestCurrent >> isAdmin
 
     
+    isAuthorized (DataR (RuleSequenceParamsR {})) _ = isAdmin
+    
+    isAuthorized (DataR (RuleSequenceDeleR {})) _ = isAdmin
+    isAuthorized (DataR (RuleSequenceEditR {})) _ = isAdmin
     isAuthorized (DataR (RuleSequenceNewR _ _)) _ = isAdmin
     isAuthorized (DataR (RuleSequenceR {})) _ = isAdmin
     isAuthorized (DataR (RuleSequencesR _ _)) _ = isAdmin

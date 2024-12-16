@@ -1,0 +1,54 @@
+
+^{widgetTopbar (Just (DataR $ RuleSequencesR oid rid,[])) (msgr MsgSequence) idOverlay (Just idDialogDelete) (Just $ DataR $ RuleSequenceEditR oid rid sid)}
+
+<main.responsive.no-padding>
+
+  <div.tabs.min>
+    <a.active href=@{DataR $ RuleSequenceR oid rid sid}>
+      _{MsgDetails}
+      
+    <a href=@{DataR $ RuleSequenceParamsR oid rid sid}>
+      _{MsgParameters}
+    
+  <div.page.padding.active>
+
+    $maybe Entity _ (Sequence _ name) <- s
+      <dl.margin>
+
+        <dt.bold>_{MsgName}
+        <dd.small-margin>
+          $case name 
+            $of RuleTypeBefore
+              _{MsgBefore}
+
+            $of RuleTypeAfter
+              _{MsgAfter}
+
+        $forall Entity _ (Param _ pname pvalue) <- params
+          <dt.bold>
+            $case pname
+              $of ParamRuleIndex
+                _{MsgRule}
+              $of ParamOffset
+                _{MsgOffset}
+              $of ParamDuration
+                _{MsgDuration}
+                
+          <dd.small-margin>
+            #{show pvalue}
+
+    ^{widgetSnackbar msgs}
+
+<div.overlay ##{idOverlay} data-ui=##{idOverlay}>
+
+<dialog ##{idDialogDelete}>
+  <h5>_{MsgConfirmPlease}
+  <div>_{MsgDeleteAreYouSure}
+  <nav.right-align.no-space>
+    <button.transparent.link data-ui=##{idOverlay}
+      onclick="document.getElementById('#{idDialogDelete}').close()">
+      _{MsgCancel}
+    <form method=post action=@{DataR $ RuleSequenceDeleR oid rid sid} enctype=#{et0}>
+      ^{fw0}
+      <button.primary type=submit>
+        _{MsgDele}
