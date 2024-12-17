@@ -21,7 +21,7 @@ import Foundation
     ( Handler, Form, widgetSnackbar, widgetTopbar
     , Route (ReportFixedParamsR, HomeR)
     , AppMessage
-      ( MsgAppName, MsgProject, MsgReportsFixedName
+      ( MsgAppName, MsgProject, MsgLoadParameters, MsgReport
       )
     )
     
@@ -29,7 +29,8 @@ import Material3 (md3selectWidget)
 
 import Model
     ( ProjectId, Project(projectName)
-    , EntityField (ProjectId)
+    , ReportId, Report (reportName)
+    , EntityField (ProjectId, ReportId)
     )
 
 import Settings (widgetFile)
@@ -55,7 +56,7 @@ postHomeR = do
 
     ((fr,fw),et) <- runFormPost formOne
     case fr of
-      FormSuccess pid -> redirect $ ReportFixedParamsR pid
+      FormSuccess (pid,rid) -> redirect $ ReportFixedParamsR pid rid
       _otherwise -> do
           msgr <- getMessageRender
           msgs <- getMessages
@@ -84,7 +85,7 @@ getHomeR = do
         $(widgetFile "homepage")
 
 
-formOne :: Form ProjectId
+formOne :: Form (ProjectId, ReportId)
 formOne extra = do
     
     projects <- liftHandler $ ((\e -> ((projectName . entityVal) e, entityKey e)) <$>) <$> runDB ( select $ do
@@ -96,10 +97,21 @@ formOne extra = do
         { fsLabel = SomeMessage MsgProject
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
         } Nothing
+    
+    reports <- liftHandler $ ((\e -> ((reportName . entityVal) e, entityKey e)) <$>) <$> runDB ( select $ do
+        x <- from $ table @Report
+        orderBy [asc (x ^. ReportId)]
+        return x )
+    
+    (reportR, reportV) <- mreq (selectField (optionsPairs reports)) FieldSettings
+        { fsLabel = SomeMessage MsgReport
+        , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
+        } Nothing
         
-    return ( projectR
+    return ( (,) <$> projectR <*> reportR
            , [whamlet|
                      ^{extra}
                      ^{md3selectWidget projectV}
+                     ^{md3selectWidget reportV}
                      |]
            )

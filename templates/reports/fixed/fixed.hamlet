@@ -1,5 +1,5 @@
 
-^{widgetTopbar (Just (ReportFixedParamsR pid,[])) (msgr MsgReportsFixedName) idOverlay Nothing Nothing}
+^{widgetTopbar (Just (ReportFixedParamsR pid rid,[])) (msgr MsgReportsFixedName) idOverlay Nothing Nothing}
 
 <main.responsive>
 
@@ -13,18 +13,18 @@
       <tbody>
         $forall (i,article,_,amount,sequences) <- rules
           <tr.wave>
-            <th.border scope=row>
+            <th.border scope=row style="white-space:nowrap">
               #{article}
             $forall sequence <- sequences
               $case sequence
                 $of After _ o l
-                  $forall _ <- range ((offset i [] sequence) + o)
+                  $forall _ <- range ((offset rules i [] sequence) + o)
                     <td.border>
                   $forall _ <- range l
-                    <td.border>#{amount}
+                    <td.border>#{show amount}
                     
                 $of Before _ o l
-                  $forall _ <- range (((offset i [] sequence) - o) - l)
+                  $forall _ <- range (((offset rules i [] sequence) - o) - l)
                     <td.border>
                   $forall _ <- range l
-                    <td.border>#{amount}
+                    <td.border>#{show amount}

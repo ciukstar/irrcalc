@@ -1,3 +1,5 @@
+LoadParameters: Загрузить параметры
+Amount: Сумма
 Parameters: Параметры
 Sequences: Последовательности
 Index: Индекс

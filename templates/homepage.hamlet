@@ -7,7 +7,7 @@
     ^{fw}
     <nav>
       <button type=submit>
-        _{MsgReportsFixedName}
+        _{MsgLoadParameters}
 
 
 $if not (null msgs)

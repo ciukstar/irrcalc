@@ -5,11 +5,10 @@ $doctype 5
     <meta charset="UTF-8">
 
     <title>#{pageTitle pc}
-    <meta name="description" content="EventQr">
+    <meta name="description" content=#{msgr MsgMetaDescription}>
     <meta name="author" content="Sergiu Starciuc, ciukstar@gmail.com">
 
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
     <link href=@{StaticR css_beer_min_css} rel="stylesheet">
 

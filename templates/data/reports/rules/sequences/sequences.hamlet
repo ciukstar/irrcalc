@@ -1,5 +1,5 @@
 
-^{widgetTopbar (Just (DataR $ RuleR oid rid,[])) (msgr MsgSequence) idOverlay Nothing Nothing}
+^{widgetTopbar (Just (DataR $ RuleR oid rid,[])) (msgr MsgRule) idOverlay Nothing Nothing}
 
 <main.responsive.no-padding>
 
@@ -17,7 +17,7 @@
           <div>_{MsgPleaseAddIfYouWish}.
 
     $else
-      $forall Entity sid (Sequence _ name) <- sequences
+      $forall (Entity sid (Sequence _ name),params) <- sequences
         <a.row.padding.wave href=@{DataR $ RuleSequenceR oid rid sid}>
 
           <div.content.max>
@@ -28,6 +28,21 @@
                   
                 $of RuleTypeAfter
                   _{MsgAfter}
+
+              &nbsp;
+              
+              $forall Entity _ (Param _ pname pvalue) <- params
+                <span.small-text.lower>
+                  $case pname
+                    $of ParamRuleIndex
+                      _{MsgRule}
+                    $of ParamOffset
+                      _{MsgOffset}
+                    $of ParamDuration
+                      _{MsgDuration}
+
+                <span>
+                  #{show pvalue}
 
           <i>arrow_forward_ios
 

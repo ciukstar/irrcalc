@@ -1,0 +1,2 @@
+
+document.getElementById(#{fvId amountV}).value = Number(document.getElementById(#{fvId amountV}).value).toFixed(2);

@@ -1,3 +1,5 @@
+LoadParameters: Load parameters
+Amount: Amount
 Parameters: Parameters
 Sequences: Sequences
 Index: Index

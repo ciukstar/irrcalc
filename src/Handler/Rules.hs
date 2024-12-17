@@ -16,7 +16,7 @@ module Handler.Rules
     , getRuleSequenceParamsR
     ) where
 
-import Control.Monad (forM_)
+import Control.Monad (forM_, forM)
 
 import Data.Text (pack)
 
@@ -47,7 +47,7 @@ import Foundation
       , MsgDeleteAreYouSure, MsgConfirmPlease, MsgRule, MsgSave, MsgRecordAdded
       , MsgRecordEdited, MsgInvalidFormData, MsgRecordDeleted, MsgDetails, MsgFlow
       , MsgInflow, MsgOutflow, MsgReport, MsgIndex, MsgSequences, MsgAfter
-      , MsgBefore, MsgType, MsgOffset, MsgLength, MsgParameters
+      , MsgBefore, MsgType, MsgOffset, MsgLength, MsgParameters, MsgAmount
       )
     )
 
@@ -57,7 +57,7 @@ import Model
        ( msgSuccess, msgError
        , CashFlowType (Outflow, Inflow)
        , ReportId
-       , RuleId, Rule (Rule, ruleArticle, ruleDescr, ruleFlow, ruleIndex)
+       , RuleId, Rule (Rule, ruleArticle, ruleDescr, ruleFlow, ruleIndex, ruleAmount)
        , SequenceId, Sequence (Sequence, sequenceName)
        , RuleType (RuleTypeAfter, RuleTypeBefore)
        , ParamName (ParamOffset, ParamDuration, ParamRuleIndex)
@@ -65,7 +65,7 @@ import Model
        , EntityField
          ( RuleId, RuleArticle, RuleReport, RuleIndex, SequenceRule, SequenceId
          , ParamName, ParamValue, ParamSequence, ParamId
-         ), Unique (UniqueParam)
+         ), Unique (UniqueParam), floatToCenti, floatToFixed, fixedToFloat
        )
 
 import Settings (widgetFile)
@@ -79,11 +79,11 @@ import Yesod.Core
     )
 import Yesod.Form.Functions (generateFormPost, mreq, mopt, checkM, runFormPost)
 import Yesod.Form.Fields
-    ( selectField, optionsPairs, intField, textField, textareaField
+    ( selectField, optionsPairs, intField, textField, textareaField, doubleField
     )
 import Yesod.Form.Types
     ( FieldSettings(FieldSettings, fsLabel, fsId, fsName, fsTooltip, fsAttrs)
-    , Field, FormResult (FormSuccess)
+    , Field, FormResult (FormSuccess), FieldView (fvId)
     )
 import Yesod.Persist.Core (YesodPersist(runDB))
 
@@ -229,7 +229,7 @@ formSequence rid s extra = do
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
         } (sequenceName . entityVal <$> s)
 
-    let relationOpts = optionsPairs $ (\(Entity _ (Rule _ i article _ _)) -> (pack (show i) <> ". " <> article,i)) <$> rules
+    let relationOpts = optionsPairs $ (\(Entity _ (Rule _ i article _ _ _)) -> (pack (show i) <> ". " <> article,i)) <$> rules
 
     idx <- liftHandler $ (unValue <$>) <$> runDB ( selectOne $ do
         x <- from $ table @Param
@@ -279,16 +279,23 @@ formSequence rid s extra = do
 getRuleSequencesR :: ReportId -> RuleId -> Handler Html
 getRuleSequencesR oid rid = do
 
-    sequences <- runDB $ select $ do
-        x <- from $ table @Sequence
-        where_ $ x ^. SequenceRule ==. val rid
-        orderBy [asc (x ^. SequenceId)]
-        return x
+    sequences <- do
+        xs <- runDB $ select $ do
+            x <- from $ table @Sequence
+            where_ $ x ^. SequenceRule ==. val rid
+            orderBy [asc (x ^. SequenceId)]
+            return x
+
+        forM xs $ \s@(Entity sid _) -> (s,) <$> runDB ( select $ do
+            p <- from $ table @Param
+            where_ $ p ^. ParamSequence ==. val sid
+            orderBy [asc (p ^. ParamId)]
+            return p )
 
     msgr <- getMessageRender
     msgs <- getMessages
     defaultLayout $ do
-        setTitleI MsgSequences
+        setTitleI MsgSequences 
         idOverlay <- newIdent
         $(widgetFile "data/reports/rules/sequences/sequences")
  
@@ -399,12 +406,17 @@ formRule rid rule extra = do
         , fsTooltip = Nothing, fsId = Nothing, fsName = Nothing, fsAttrs = []
         } (ruleFlow . entityVal <$> rule)
 
+    (amountR,amountV) <- mreq doubleField FieldSettings
+        { fsLabel = SomeMessage MsgAmount
+        , fsTooltip = Nothing, fsId = Nothing, fsName = Nothing, fsAttrs = []
+        } (fixedToFloat . ruleAmount . entityVal <$> rule) 
+
     (descrR,descrV) <- mopt textareaField FieldSettings
         { fsLabel = SomeMessage MsgDescription
         , fsTooltip = Nothing, fsId = Nothing, fsName = Nothing, fsAttrs = []
         } (ruleDescr . entityVal <$> rule)
 
-    let r = Rule rid <$> idxR <*> articleR <*> flowR <*> descrR
+    let r = Rule rid <$> idxR <*> articleR <*> flowR <*> (floatToCenti <$> amountR) <*> descrR
 
     return (r,$(widgetFile "data/reports/rules/form"))   
   where

@@ -16,7 +16,7 @@
           <div>_{MsgPleaseAddIfYouWish}.
 
     $else
-      $forall Entity rid (Rule _ idx name flow _) <- rules
+      $forall Entity rid (Rule _ idx name flow _ _) <- rules
         <a.row.padding.wave href=@{DataR $ RuleR oid rid}>
           <div.large-text>#{idx}
 

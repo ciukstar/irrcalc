@@ -9,7 +9,7 @@
     
   <div.page.padding.active>
 
-    $maybe Entity _ (Rule _ idx name flow descr) <- rule
+    $maybe Entity _ (Rule _ idx name flow amount descr) <- rule
       <dl.margin>
 
         <dt.bold>_{MsgIndex}
@@ -23,6 +23,10 @@
         <dt.bold>_{MsgFlow}
         <dd.small-margin>
           #{show flow}
+
+        <dt.bold>_{MsgAmount}
+        <dd.small-margin>
+          #{show amount}
 
         <dt.bold>_{MsgDescription}
         <dd.small-margin>

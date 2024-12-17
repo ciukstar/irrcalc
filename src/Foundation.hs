@@ -182,6 +182,7 @@ instance Yesod App where
 
     defaultLayout :: Widget -> Handler Html
     defaultLayout widget = do
+        msgr <- getMessageRender
         master <- getYesod
         lang <- fromMaybe "en" . LS.head <$> languages
 
@@ -212,8 +213,8 @@ instance Yesod App where
 
     isAuthorized HomeR _ = setUltDestCurrent >> return Authorized
     
-    isAuthorized (ReportFixedParamsR _) _ = return Authorized
-    isAuthorized (ReportFixedRunR _) _ = return Authorized
+    isAuthorized (ReportFixedParamsR _ _) _ = return Authorized
+    isAuthorized (ReportFixedRunR _ _) _ = return Authorized
     
         
     isAuthorized DocsR _ = setUltDestCurrent >> return Authorized

@@ -36,6 +36,7 @@ Rule
     index Int
     article Text
     flow CashFlowType
+    amount Centi
     descr Textarea Maybe
     UniqueRule report index
 

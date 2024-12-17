@@ -13,12 +13,13 @@ module Handler.Reports
 
 import Control.Monad (forM)
 
-import Data.List ((!?), unsnoc, zipWith4, zip4) 
+import Data.List ((!?), unsnoc, zipWith4, zip4)
+import Data.Fixed (Centi)
 import Data.Text (Text)
 
 import Database.Esqueleto.Experimental
     ( select, selectOne, from, table, where_, val
-    , (^.), (==.)
+    , (^.), (==.), orderBy, asc
     )
 import Database.Persist
     ( Entity (Entity), entityVal, delete, insert_, replace
@@ -47,8 +48,13 @@ import Material3 (md3widget, md3selectWidget, md3textareaWidget)
 import Model
        ( ProjectId, msgSuccess, msgError
        , ReportId, Report (Report, reportName, reportDescr)
-       , EntityField (ReportId, ReportName), CashFlowType (Outflow, Inflow)
+       , CashFlowType (Outflow, Inflow), Rule (Rule)
+       , Param (Param, paramValue), RuleType (RuleTypeBefore, RuleTypeAfter)
+       , EntityField
+         ( ReportId, ReportName, RuleReport, SequenceRule, ParamSequence, ParamId
+         ), centiToFloat, floatToCenti
        )
+import qualified Model as M ( Sequence (Sequence) )
 
 import Settings (widgetFile)
 
@@ -77,58 +83,49 @@ data Sequence = After  Int Int Int
 type Rules = [ ( Int           -- Index
                , Text          -- Article
                , CashFlowType
-               , Double        -- Value
+               , Centi        -- Value
                , [Sequence]
                )
              ]
 
-rules :: Rules
-rules = [ (1,"Смена назначения ЗУ",  Outflow, 4.0, [After 0 0 2])
-        , (2,"Документы на ГенПлан", Outflow, 5.0, [After 1 2 1, After 2 3 1]) -- 
-        , (3,"Стройка 1", Outflow, 6.0, [After 2 3 2])
-        , (4,"Рабочая документация на очереди",Outflow, 9.0, [Before 3 1 4])
-        , (5,"Стройка 2", Outflow, 7.0, [After 4 0 3])
-        , (6,"Рабочая документация на очереди",Outflow, 10.0, [Before 5 1 4])
-        , (7,"Стройка 3", Outflow, 8.0, [After 6 0 7]) 
-        , (8,"Рабочая документация на очереди",Outflow, 11.0, [Before 7 1 4])
-        ]
 
-
-
-offset :: Int -> [Sequence] -> Sequence -> Int
-offset i xs (After n _ _) = case rules !? (n - 1) of
+offset :: Rules -> Int -> [Sequence] -> Sequence -> Int
+offset rules i xs (After n _ _) = case rules !? (n - 1) of
     Nothing -> 0
       
     Just (j,_,_,_,_) | j == i -> case unsnoc xs of
       Nothing -> 0
-      Just (xs'',e@(After _ o'' l'')) -> o'' + l'' + offset j xs'' e
-      Just (xs'',e@(Before _ o'' l'')) -> o'' + l'' + offset j xs'' e
+      Just (xs'',e@(After _ o'' l'')) -> o'' + l'' + offset rules j xs'' e
+      Just (xs'',e@(Before _ o'' l'')) -> o'' + l'' + offset rules j xs'' e
       
     Just (j,_,_,_,xs') -> case unsnoc xs' of
       Nothing -> 0
-      Just (xs'',e@(After _ o'' l'')) -> o'' + l'' + offset j xs'' e
-      Just (xs'',e@(Before _ o'' _)) -> (-o'') + offset j xs'' e
+      Just (xs'',e@(After _ o'' l'')) -> o'' + l'' + offset rules j xs'' e
+      Just (xs'',e@(Before _ o'' _)) -> (-o'') + offset rules j xs'' e
       
-offset i xs (Before n _ _) = case rules !? (n - 1) of
+offset rules i xs (Before n _ _) = case rules !? (n - 1) of
     Nothing -> 0
       
     Just (j,_,_,_,_) | j == i -> case unsnoc xs of
       Nothing -> 0
-      Just (xs'',e@(After _ o'' _l'')) -> o'' + offset j xs'' e
-      Just (xs'',e@(Before _ o'' l'')) -> o'' + l'' + offset j xs'' e
+      Just (xs'',e@(After _ o'' _l'')) -> o'' + offset rules j xs'' e
+      Just (xs'',e@(Before _ o'' l'')) -> o'' + l'' + offset rules j xs'' e
       
     Just (j,_,_,_,xs') -> case unsnoc xs' of
       Nothing -> 0
-      Just (xs'',e@(After _ o'' _l'')) -> o'' + offset j xs'' e
-      Just (xs'',e@(Before _ o'' l'')) -> o'' + l'' + offset j xs'' e
+      Just (xs'',e@(After _ o'' _l'')) -> o'' + offset rules j xs'' e
+      Just (xs'',e@(Before _ o'' l'')) -> o'' + l'' + offset rules j xs'' e
 
 
 range :: Int -> [Int]
 range n = [1..n]
 
 
-postReportFixedRunR :: ProjectId -> Handler Html
-postReportFixedRunR pid = do
+postReportFixedRunR :: ProjectId -> ReportId -> Handler Html
+postReportFixedRunR pid rid = do
+
+    rules <- queryRules rid
+    
     msgr <- getMessageRender
     defaultLayout $ do
         setTitleI MsgReportsFixedName
@@ -136,9 +133,10 @@ postReportFixedRunR pid = do
         $(widgetFile "reports/fixed/fixed")
 
 
-getReportFixedParamsR :: ProjectId -> Handler Html
-getReportFixedParamsR pid = do
-    (fw,et) <- generateFormPost formParamsFixed
+getReportFixedParamsR :: ProjectId -> ReportId -> Handler Html
+getReportFixedParamsR pid rid = do
+    rules <- queryRules rid
+    (fw,et) <- generateFormPost $ formParamsFixed rules
     msgr <- getMessageRender
     defaultLayout $ do
         setTitleI MsgReportParameters
@@ -146,17 +144,13 @@ getReportFixedParamsR pid = do
         $(widgetFile "reports/fixed/params") 
 
 
-data Periodicity = PeriodicityEveryJanuary
-    deriving (Show, Read, Eq)
-
-
-formParamsFixed :: Form [((Double,CashFlowType),[(Text,Int,Int,Int)])]
-formParamsFixed extra = do
+formParamsFixed :: Rules -> Form [((Centi,CashFlowType),[(Text,Int,Int,Int)])]
+formParamsFixed rules extra = do
 
     amounts <- forM rules $ \(_,article,_,amount,_) -> mreq doubleField FieldSettings
         { fsLabel = SomeMessage article
         , fsId = Nothing, fsName = Nothing, fsTooltip = Nothing, fsAttrs = []
-        } (Just amount)
+        } (Just (centiToFloat amount))
 
     let flowTypes = optionsPairs [(MsgOutflow, Outflow), (MsgInflow,Inflow)]
 
@@ -194,7 +188,7 @@ formParamsFixed extra = do
 
     let params = zipWith4 zip4 <$> ss <*> rs <*> os <*> ls
     
-    let r = zip <$> ( zip <$> traverse fst amounts <*> traverse fst flows
+    let r = zip <$> ( zip <$> traverse ((floatToCenti <$>) . fst) amounts <*> traverse fst flows
                     )
             <*> params
 
@@ -232,7 +226,59 @@ formParamsFixed extra = do
                           
                     |]
     return (r,w)
- 
+
+
+queryRules :: ReportId -> Handler Rules
+queryRules oid = do
+    
+    rules <- do
+        rules <- runDB $ select $ do
+            r <- from $ table @Rule
+            where_ $ r ^. RuleReport ==. val oid
+            return r
+
+        forM rules $ \r@(Entity rid _) -> do
+            sequences <- runDB $ select $ do
+                s <- from $ table @M.Sequence
+                where_ $ s ^. SequenceRule ==. val rid
+                return s
+
+            xs <- forM sequences $ \s@(Entity sid _) -> (s,) <$> runDB ( select $ do
+                    p <- from $ table @Param
+                    where_ $ p ^. ParamSequence ==. val sid
+                    orderBy [asc (p ^. ParamId)]
+                    return p )
+
+            return (r,xs)
+                
+
+    let s = \(Entity _ (M.Sequence _ name),params) -> case name of
+          RuleTypeBefore -> Before
+                            (paramValue $ entityVal $ head params)
+                            (paramValue $ entityVal $ head (tail params))
+                            (paramValue $ entityVal $ head (tail (tail params)))
+          RuleTypeAfter -> After
+                            (paramValue $ entityVal $ head params)
+                            (paramValue $ entityVal $ head (tail params))
+                            (paramValue $ entityVal $ head (tail (tail params)))
+
+    let result =
+            (\(Entity _ (Rule _ i art f mnt _),sequences) -> (i,art,f,mnt, s <$> sequences))
+            <$> rules
+
+    return result
+            {--
+    return [ (1,"Смена назначения ЗУ",  Outflow, 4.0, [After 0 0 2])
+           , (2,"Документы на ГенПлан", Outflow, 5.0, [After 1 2 1, After 2 3 1]) -- 
+           , (3,"Стройка 1", Outflow, 6.0, [After 2 3 2])
+           , (4,"Рабочая документация на очереди",Outflow, 9.0, [Before 3 1 4])
+           , (5,"Стройка 2", Outflow, 7.0, [After 4 0 3])
+           , (6,"Рабочая документация на очереди",Outflow, 10.0, [Before 5 1 4])
+           , (7,"Стройка 3", Outflow, 8.0, [After 6 0 7]) 
+           , (8,"Рабочая документация на очереди",Outflow, 11.0, [Before 7 1 4])
+           ] --}
+
+    
 
 postReportDeleR :: ReportId -> Handler Html
 postReportDeleR pid = do

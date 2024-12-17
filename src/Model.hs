@@ -56,7 +56,7 @@ import GHC.Real ((^))
 
 import Prelude
     ( Double, truncate, undefined, fromIntegral, flip, quotRem, div, fromInteger
-    , round
+    , round, (/)
     )
 
 import Text.Hamlet (Html)
@@ -271,6 +271,15 @@ nominalDiffTimeToMinutes =
 minutesToNominalDiffTime :: Int -> NominalDiffTime
 minutesToNominalDiffTime =
     secondsToNominalDiffTime . MkFixed . (* (^) @Integer @Integer 10 12) . (* 60) . fromIntegral
+
+
+centiToFloat :: Centi -> Double
+centiToFloat = fixedToFloat
+
+
+fixedToFloat :: HasResolution a => Fixed a -> Double 
+fixedToFloat x@(MkFixed a) = fromIntegral a / fromIntegral (resolution x)
+
 
 floatToCenti :: Double -> Centi
 floatToCenti = floatToFixed

@@ -25,7 +25,7 @@ import Model
       )
     , Project (Project, projectName, projectStart, projectEnd, projectDescr)
     , Report (Report, reportName, reportDescr)
-    , Rule (Rule, ruleReport, ruleIndex, ruleArticle, ruleFlow, ruleDescr)
+    , Rule (Rule, ruleReport, ruleIndex, ruleArticle, ruleFlow, ruleDescr, ruleAmount)
     , Sequence (Sequence, sequenceRule, sequenceName)
     , Param (Param, paramSequence, paramName, paramValue)
     , CashFlowType (Outflow), RuleType (RuleTypeAfter)
@@ -144,6 +144,7 @@ fillDemoRu _appSettings = do
                       , ruleIndex = 1
                       , ruleArticle = "Покупка объекта"
                       , ruleFlow = Outflow
+                      , ruleAmount = 75000000.00
                       , ruleDescr = Nothing
                       }
 
@@ -168,6 +169,37 @@ fillDemoRu _appSettings = do
     insert_ Param { paramSequence = sid111
                   , paramName = ParamDuration
                   , paramValue = 1
+                  }
+
+    let rule12 = Rule { ruleReport = rpt1
+                      , ruleIndex = 2
+                      , ruleArticle = "Смена назначения ЗУ"
+                      , ruleFlow = Outflow
+                      , ruleAmount = 807673.00
+                      , ruleDescr = Nothing
+                      }
+
+    rid12 <- insert rule12
+
+    let sequence112 = Sequence { sequenceRule = rid12
+                               , sequenceName = RuleTypeAfter
+                               }
+
+    sid112 <- insert sequence112
+
+    insert_ Param { paramSequence = sid112
+                  , paramName = ParamRuleIndex
+                  , paramValue = 0
+                  }
+
+    insert_ Param { paramSequence = sid112
+                  , paramName = ParamOffset
+                  , paramValue = 1
+                  }
+
+    insert_ Param { paramSequence = sid112
+                  , paramName = ParamDuration
+                  , paramValue = 12
                   }
 
     return ()

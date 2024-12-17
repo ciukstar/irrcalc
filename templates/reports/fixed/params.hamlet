@@ -8,7 +8,7 @@
     <a href=#>_{MsgSequence}
     
   <div.page.padding.active>
-    <form method=post action=@{ReportFixedRunR pid} enctype=#{et}>
+    <form method=post action=@{ReportFixedRunR pid rid} enctype=#{et}>
       ^{fw}
       <nav>
         <button type=submit>
