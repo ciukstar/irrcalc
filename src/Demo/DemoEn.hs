@@ -31,7 +31,7 @@ import Model
     , Rule (Rule, ruleIndex, ruleArticle, ruleFlow, ruleDescr, ruleReport, ruleAmount)
     , CashFlowType (Outflow)
     , Sequence (Sequence, sequenceRule, sequenceName)
-    , RuleType (RuleTypeAfter)
+    , RuleType (RuleTypeAfter, RuleTypeBefore)
     , Param (Param, paramName, paramValue, paramSequence)
     , ParamName (ParamRuleIndex, ParamOffset, ParamDuration)
     )
@@ -204,12 +204,219 @@ fillDemoEn _appSettings = do
 
     insert_ Param { paramSequence = sid112
                   , paramName = ParamOffset
-                  , paramValue = 1
+                  , paramValue = 0
                   }
 
     insert_ Param { paramSequence = sid112
                   , paramName = ParamDuration
                   , paramValue = 12
+                  }
+
+    let rule13 = Rule { ruleReport = rpt1
+                      , ruleIndex = 3
+                      , ruleArticle = "Documents for the General Plan"
+                      , ruleFlow = Outflow
+                      , ruleAmount = 5500000.00
+                      , ruleDescr = Nothing
+                      }
+
+    rid13 <- insert rule13
+
+    let sequence131 = Sequence { sequenceRule = rid13
+                               , sequenceName = RuleTypeAfter
+                               }
+
+    sid131 <- insert sequence131
+
+    insert_ Param { paramSequence = sid131
+                  , paramName = ParamRuleIndex
+                  , paramValue = 2
+                  }
+
+    insert_ Param { paramSequence = sid131
+                  , paramName = ParamOffset
+                  , paramValue = 1
+                  }
+
+    insert_ Param { paramSequence = sid131
+                  , paramName = ParamDuration
+                  , paramValue = 1
+                  }
+
+    let sequence132 = Sequence { sequenceRule = rid13
+                               , sequenceName = RuleTypeAfter
+                               }
+
+    sid132 <- insert sequence132
+
+    insert_ Param { paramSequence = sid132
+                  , paramName = ParamRuleIndex
+                  , paramValue = 3
+                  }
+
+    insert_ Param { paramSequence = sid132
+                  , paramName = ParamOffset
+                  , paramValue = 3
+                  }
+
+    insert_ Param { paramSequence = sid132
+                  , paramName = ParamDuration
+                  , paramValue = 1
+                  }
+
+    let rule14 = Rule { ruleReport = rpt1
+                      , ruleIndex = 4
+                      , ruleArticle = "Working documentation for the stage"
+                      , ruleFlow = Outflow
+                      , ruleAmount = 1815000.00
+                      , ruleDescr = Nothing
+                      }
+
+    rid14 <- insert rule14
+
+    let sequence141 = Sequence { sequenceRule = rid14
+                               , sequenceName = RuleTypeBefore
+                               }
+
+    sid141 <- insert sequence141
+
+    insert_ Param { paramSequence = sid141
+                  , paramName = ParamRuleIndex
+                  , paramValue = 5
+                  }
+
+    insert_ Param { paramSequence = sid141
+                  , paramName = ParamOffset
+                  , paramValue = 1
+                  }
+
+    insert_ Param { paramSequence = sid141
+                  , paramName = ParamDuration
+                  , paramValue = 4
+                  }
+
+    let rule15 = Rule { ruleReport = rpt1
+                      , ruleIndex = 5
+                      , ruleArticle = "Construction of the 1st stage, 6000 m2"
+                      , ruleFlow = Outflow
+                      , ruleAmount = 55902000.00
+                      , ruleDescr = Nothing
+                      }
+
+    rid15 <- insert rule15
+
+    let sequence151 = Sequence { sequenceRule = rid15
+                               , sequenceName = RuleTypeAfter
+                               }
+
+    sid151 <- insert sequence151
+
+    insert_ Param { paramSequence = sid151
+                  , paramName = ParamRuleIndex
+                  , paramValue = 3
+                  }
+
+    insert_ Param { paramSequence = sid151
+                  , paramName = ParamOffset
+                  , paramValue = 9
+                  }
+
+    insert_ Param { paramSequence = sid151
+                  , paramName = ParamDuration
+                  , paramValue = 5
+                  }
+
+    let rule16 = Rule { ruleReport = rpt1
+                      , ruleIndex = 6
+                      , ruleArticle = "Working documentation for the stage"
+                      , ruleFlow = Outflow
+                      , ruleAmount = 1815000.00
+                      , ruleDescr = Nothing
+                      }
+
+    rid16 <- insert rule16
+
+    let sequence161 = Sequence { sequenceRule = rid16
+                               , sequenceName = RuleTypeBefore
+                               }
+
+    sid161 <- insert sequence161
+
+    insert_ Param { paramSequence = sid161
+                  , paramName = ParamRuleIndex
+                  , paramValue = 7
+                  }
+
+    insert_ Param { paramSequence = sid161
+                  , paramName = ParamOffset
+                  , paramValue = 1
+                  }
+
+    insert_ Param { paramSequence = sid161
+                  , paramName = ParamDuration
+                  , paramValue = 4
+                  }
+
+    let rule17 = Rule { ruleReport = rpt1
+                      , ruleIndex = 7
+                      , ruleArticle = "Construction of the 2nd stage, 10000 m2"
+                      , ruleFlow = Outflow
+                      , ruleAmount = 38820833.00
+                      , ruleDescr = Nothing
+                      }
+
+    rid17 <- insert rule17
+
+    let sequence171 = Sequence { sequenceRule = rid17
+                               , sequenceName = RuleTypeAfter
+                               }
+
+    sid171 <- insert sequence171
+
+    insert_ Param { paramSequence = sid171
+                  , paramName = ParamRuleIndex
+                  , paramValue = 5
+                  }
+
+    insert_ Param { paramSequence = sid171
+                  , paramName = ParamOffset
+                  , paramValue = 0
+                  }
+
+    insert_ Param { paramSequence = sid171
+                  , paramName = ParamDuration
+                  , paramValue = 12
+                  }
+
+    let rule18 = Rule { ruleReport = rpt1
+                      , ruleIndex = 8
+                      , ruleArticle = "Road inside the park"
+                      , ruleFlow = Outflow
+                      , ruleAmount = 1995290.00
+                      , ruleDescr = Nothing
+                      }
+
+    rid18 <- insert rule18
+
+    let sequence181 = Sequence { sequenceRule = rid18
+                               , sequenceName = RuleTypeAfter
+                               }
+
+    sid181 <- insert sequence181
+
+    insert_ Param { paramSequence = sid181
+                  , paramName = ParamRuleIndex
+                  , paramValue = 3
+                  }
+
+    insert_ Param { paramSequence = sid181
+                  , paramName = ParamOffset
+                  , paramValue = 9
+                  }
+
+    insert_ Param { paramSequence = sid181
+                  , paramName = ParamDuration
+                  , paramValue = 17
                   }
     
     return ()

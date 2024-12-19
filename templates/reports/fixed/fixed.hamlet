@@ -13,7 +13,7 @@
       <tbody>
         $forall (i,article,_,amount,sequences) <- rules
           <tr.wave>
-            <th.border scope=row style="white-space:nowrap">
+            <th.border.small-text scope=row style="white-space:nowrap">
               #{article}
             $forall sequence <- sequences
               $case sequence
